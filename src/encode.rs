@@ -18,11 +18,13 @@ pub fn dense_node (dense: DenseNode, refs: &HashMap<i64, (f64, f64)>) {
 }
 
 fn get_type (tags: TagIter) -> i32 {
-  let TYPES = types::get_types();
-  let t: Option<&i32>;
+  let all_types= types::get_types();
+  let mut t = None;
   for tag in tags {
     let string = format!("{}.{}", tag.0, tag.1);
-    t = TYPES.get(&string);
+    if all_types.contains_key(&string) {
+      t = all_types.get(&string) 
+    }
   }
   match t {
     Some(_) => return *t.unwrap(),
