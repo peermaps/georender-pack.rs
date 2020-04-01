@@ -9,5 +9,4 @@ edition = "2018"
 [dependencies]
 osmpbf = "0.1"
 kv = "0.20.2"
-serde_json = "1.0"
-serde = "1.0.105"
+desert = "1.0.3"
