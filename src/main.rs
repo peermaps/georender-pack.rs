@@ -24,21 +24,21 @@ fn run() -> Result<(), Box<dyn Error>>  {
         match item {
             Element::DenseNode(dense) => {
                nodes.insert(dense.id, (dense.lat(), dense.lon()));
-               let node = encode::dense_node(dense, &deps);
+               let encoded = encode::dense_node(dense);
             },
             Element::Relation(_rel) => {
                 // do nothing
             },
             Element::Node(node) => {
                nodes.insert(node.id(), (node.lat(), node.lon()));
-               encode::node(node, &deps);
+               encode::node(node);
             },
             Element::Way(way) => {
                 for r in way.refs() {
                    let ref item = nodes[&r];
                    deps.entry(r).or_insert(*item);
                 }
-               encode::way(way, &deps);
+               let encoded = encode::way(way, &deps);
             }
         }
     }).unwrap();

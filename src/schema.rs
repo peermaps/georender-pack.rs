@@ -7,46 +7,51 @@ use crate::osm_types;
 
 const PLACE_OTHER: i32 = 277;
 
-const all_types: HashMap<String, i32> = osm_types::get_types();
-
 #[derive(Debug)]
 pub struct Tag { 
-  K: String,
-  V: String
+  pub K: String,
+  pub V: String
+}
+
+#[derive(Debug)]
+pub struct PeerLine { 
+  pub id: i64,
+  pub positions: Vec<(f32, f32)>,
+  pub tags: Vec<Tag>
 }
 
 #[derive(Debug)]
 pub struct PeerArea { 
-  id: i64,
-  refs: Vec<i64>,
-  deps: HashMap<i64, (f64, f64)>,
-  tags: Vec<Tag>
+  pub id: i64,
+  pub positions: Vec<(f32, f32)>,
+  pub tags: Vec<Tag>
 }
 
 #[derive(Debug)]
 pub struct PeerNode { 
-  id: i64,
-  lat: f64,
-  lon: f64,
-  tags: Vec<Tag>
+  pub id: i64,
+  pub lat: f64,
+  pub lon: f64,
+  pub tags: Vec<Tag>
 }
 
-fn parse_tags (tags: Vec<Tag>) -> Result<(i32, Vec<u8>), Error> {
+fn parse_tags (tags: &Vec<Tag>) -> Result<(i32, Vec<u8>), Error> {
   lazy_static! {
-      static ref RE: Regex = Regex::new("(name|name_").unwrap();
+      static ref RE: Regex = Regex::new("(name:|_name:)").unwrap();
+      static ref ALL_TYPES: HashMap<String, i32> = osm_types::get_types();
   }
 
-  let labels = vec![];
+  let mut labels = vec![];
   let typ;
   let mut t = None;
 
   for tag in tags {
     // TODO: there must be a better way?
     let string = format!("{}.{}", tag.K, tag.V);
-    if all_types.contains_key(&string) {
-      t = all_types.get(&string);
+    if ALL_TYPES.contains_key(&string) {
+      t = ALL_TYPES.get(&string);
     }
-    let parsed_key = RE.replace_all(&tag.K, "");
+    let parsed_key = RE.replace_all(&tag.K, ":");
     let len = parsed_key.len();
     labels.extend((len as u16).to_bytes_le()?);
     "=".bytes().map(|b| labels.push(b));
@@ -63,7 +68,7 @@ fn parse_tags (tags: Vec<Tag>) -> Result<(i32, Vec<u8>), Error> {
 
 impl ToBytesLE for PeerNode {
   fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-    let (typ, labels) = parse_tags(self.tags)?;
+    let (typ, labels) = parse_tags(&self.tags)?;
 
     // TODO: predict length of return value 
     let mut buf = vec![0u8];
@@ -81,32 +86,69 @@ impl ToBytesLE for PeerNode {
   }
 }
 
-impl ToBytesLE for PeerArea {
+impl ToBytesLE for PeerLine {
   fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-    let len = self.refs.len();
-    let (typ, labels) = parse_tags(self.tags)?;
+    let len = self.positions.len();
+    let (typ, labels) = parse_tags(&self.tags)?;
 
     // TODO: predict length of return value 
     let mut buf = vec![0u8];
+
+    // Feature type
+    buf.push(0x02);
+
+    // Type
+    buf.extend(&typ.to_bytes_le()?);
+
+    // id
+    buf.extend(&self.id.to_bytes_le()?);
+
+    // p_count (# positions)
+    buf.extend(&(len as u16).to_bytes_le()?);
+
+    // positions
+    for (lon, lat) in &self.positions {
+      buf.extend(&lon.to_bytes_le()?);
+      buf.extend(&lat.to_bytes_le()?);
+    }
+
+    buf.extend(labels);
+    buf.push(0x00); // end labels
+    return Ok(buf)
+  }
+}
+
+impl ToBytesLE for PeerArea {
+  fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
+    let (typ, labels) = parse_tags(&self.tags)?;
+
+    // TODO: predict length of return value 
+    let mut buf = vec![0u8];
+
+    // feature type
     buf.push(0x03);
 
+    // type
     buf.extend(&typ.to_le_bytes());
+
+    // id
     buf.extend(&self.id.to_le_bytes());
+    
+    // p_count (# of positions) 
+    let len = self.positions.len();
     buf.extend(&(len as u16).to_le_bytes());
 
-    for r in self.refs {
-      let lat;
-      let lon;
-      match self.deps.get(&r) {
-        Some(dep) => {
-          lon = dep.0;
-          lat = dep.1;
-          buf.extend(&(lon as f32).to_le_bytes());
-          buf.extend(&(lat as f32).to_le_bytes());
-        },
-        None => println!("Could not find dep for {}", &r)
-      }
+    // positions
+    for (lon, lat) in &self.positions {
+      buf.extend(&lon.to_bytes_le()?);
+      buf.extend(&lat.to_bytes_le()?);
     }
+
+    // TODO: Add Cells
+
+    buf.extend(labels);
+    buf.push(0x00); // end labels
+
     return Ok(buf)
   }
 }
