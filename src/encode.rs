@@ -1,89 +1,53 @@
-use osmpbf::{Node, Way, DenseNode, TagIter};
+use osmpbf::{Node, Way, DenseNode};
+use failure::Error;
 use std::collections::HashMap;
-use crate::types;
-use desert::{ToBytes,FromBytes};
+use desert::ToBytesLE;
+use crate::schema::{PeerArea, PeerNode, Tag};
 
-pub struct Encoder {
-  all_types: HashMap<String, i32>
-}
+const PLACE_OTHER: i32 = 277;
 
-fn is_area (way: Way) -> bool {
-  let refs = way.refs();
+fn is_area (refs: &[i64]) -> bool {
   let len = refs.len();
   if len < 3 {
     return false;
   } else {
-    let first = refs.next().unwrap();
-    let last = refs.last().unwrap();
+    let first = refs[0];
+    let last = refs[len - 1];
     return first == last;
   }
 }
 
-impl Encoder {
-  pub fn new () -> Encoder {
-    let all_types= types::get_types();
-    return Encoder { all_types: all_types }
+pub fn way (way: Way, deps: &HashMap<i64, (f64, f64)>) -> Result<Vec<u8>, Error> {
+  let tags = way.tags()
+    .into_iter()
+    .map(|a| Tag { K: String::from(a.0), V: String::from(a.1) })
+    .collect();
+
+  let refs = way.raw_refs();
+  let len = refs.len();
+  if is_area(refs) {
+    let area = PeerArea { id: way.id(), refs, deps, tags };
+    let buf = area.to_bytes_le()?;
+    return Ok(buf);
+  } else if len > 1 {
+    return vec![0x02];
+  } else {
+    return vec![];
   }
-
-  pub fn way (&self, way: Way, deps: &HashMap<i64, (f64, f64)>) -> Vec<u8> {
-    let typ = self.get_type(way.tags());
-    let buf;
-    let refs = way.refs();
-    let len = refs.len();
-    if is_area(way) {
-      buf = vec![0u8; 17 + len*4*2 + (len-2)*3*2];
-      buf[0] = 0x03;
-      buf.extend(&typ.to_be_bytes());
-      buf.extend(&way.id().to_be_bytes());
-      buf.extend(&(len as u16).to_be_bytes());
-      for r in refs {
-        // TODO: use a Point type instead of a tuple
-        let lon = deps[&r].0;
-        let lat = deps[&r].1;
-        buf.extend(&lon.to_be_bytes());
-        buf.extend(&lat.to_be_bytes());
-      }
-      // TODO: triangulation jazz
-
-    } else if len > 1 {
-      buf = vec![]
-      buf[0] = 0x02;
-
-    } else {
-      buf = vec![];
-      return buf;
-    }
-    return buf;
-  }
-
-  pub fn node (&self, node: Node, deps: &HashMap<i64, (f64, f64)>) -> Vec<u8> {
-    let typ = self.get_type(node.tags());
-    let buf: Vec<u8> = vec![0u8;21];
-    buf[0] = 0x01;
-    buf.extend(&typ.to_be_bytes()); 
-    buf.extend(&node.id().to_be_bytes());
-    buf.extend(&node.lon().to_be_bytes());
-    buf.extend(&node.lat().to_be_bytes());
-    return buf;
-  }
-
-  pub fn dense_node (&self, dense: DenseNode, refs: &HashMap<i64, (f64, f64)>) -> Vec<i64> {
-    // parse_tags(dense.tags())
-  }
-
-  fn get_type (&self, tags: TagIter) -> i32 {
-    let mut t = None;
-    for tag in tags {
-      let string = format!("{}.{}", tag.0, tag.1);
-      if self.all_types.contains_key(&string) {
-        t = self.all_types.get(&string) 
-      }
-    }
-    match t {
-      Some(_) => return *t.unwrap(),
-      None => return 277 // place.other
-    }
-  }
-
 }
 
+pub fn node (node: Node, deps: &HashMap<i64, (f64, f64)>) -> Vec<u8> {
+  // TODO: reuse code in dense_node
+  let mut bytes: Vec<u8> = vec![];
+  bytes[0] = 0x01;
+  return bytes;
+}
+
+pub fn dense_node (node: DenseNode, deps: &HashMap<i64, (f64, f64)>) -> Result<Vec<u8>, Error> {
+  let tags = node.tags()
+    .into_iter()
+    .map(|a| Tag { K: String::from(a.0), V: String::from(a.1) })
+    .collect();
+  let node = PeerNode { id: node.id, lat: node.lat(), lon: node.lon(), tags };
+  return node.to_bytes_le();
+}

@@ -1,7 +1,8 @@
+#[macro_use] extern crate lazy_static;
 mod encode;
-mod types;
+mod osm_types;
+mod schema;
 
-use encode::Encoder;
 use std::collections::HashMap;
 use osmpbf::{ElementReader, Element};
 use std::error::Error;
@@ -17,34 +18,32 @@ fn run() -> Result<(), Box<dyn Error>>  {
     let reader = ElementReader::from_path(&args[1]).unwrap();
 
     let mut nodes: HashMap<i64, (f64, f64)> = HashMap::new();
-    let mut refs: HashMap<i64, (f64, f64)> = HashMap::new();
-
-    let encoder: Encoder = Encoder::new();
+    let mut deps: HashMap<i64, (f64, f64)> = HashMap::new();
 
     reader.for_each(|item| {
         match item {
             Element::DenseNode(dense) => {
                nodes.insert(dense.id, (dense.lat(), dense.lon()));
-               encoder.dense_node(dense, &refs);
+               let node = encode::dense_node(dense, &deps);
             },
             Element::Relation(_rel) => {
                 // do nothing
             },
             Element::Node(node) => {
-               nodes.insert( node.id(), (node.lat(), node.lon()));
-               encoder.node(node, &refs);
+               nodes.insert(node.id(), (node.lat(), node.lon()));
+               encode::node(node, &deps);
             },
             Element::Way(way) => {
                 for r in way.refs() {
                    let ref item = nodes[&r];
-                   refs.entry(r).or_insert(*item);
+                   deps.entry(r).or_insert(*item);
                 }
-               encoder.way(way, &refs);
+               encode::way(way, &deps);
             }
         }
     }).unwrap();
 
-    println!("refs {}", refs.len());
+    println!("refs {}", deps.len());
     println!("total nodes {}", nodes.len());
 
     Ok(())
