@@ -201,7 +201,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "georender-pack"
+name = "georender"
 version = "0.1.0"
 dependencies = [
  "desert",

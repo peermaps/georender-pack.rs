@@ -1,5 +1,5 @@
 [package]
-name = "georender-pack"
+name = "georender"
 version = "0.1.0"
 authors = ["okdistribute <633012+okdistribute@users.noreply.github.com>"]
 edition = "2018"
@@ -14,3 +14,8 @@ varinteger = "1.0.6"
 regex = "1"
 lazy_static = "1.4.0"
 failure = "0.1.8"
+
+[[example]]
+name = "pack"
+path = "example/pack/main.rs"
+required-features = [ ]

@@ -1,12 +1,10 @@
-#[macro_use] extern crate lazy_static;
-mod encode;
-mod osm_types;
-mod schema;
-
 use std::collections::HashMap;
 use osmpbf::{ElementReader, Element};
 use std::error::Error;
 use std::env;
+use georender::encode;
+use georender::osm_types;
+use georender::schema;
 
 fn main() {
     run();
