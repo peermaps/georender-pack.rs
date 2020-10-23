@@ -3,8 +3,6 @@ use osmpbf::{ElementReader, Element};
 use std::error::Error;
 use std::env;
 use georender::encode;
-use georender::osm_types;
-use georender::schema;
 
 fn main() {
     run();

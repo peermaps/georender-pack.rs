@@ -1,7 +1,6 @@
-use desert::{ToBytesLE,FromBytesLE};
+use desert::{ToBytesLE};
 use regex::Regex;
 use std::collections::HashMap;
-use osmpbf::{DenseTagIter};
 use failure::Error;
 use crate::osm_types;
 
