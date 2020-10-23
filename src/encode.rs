@@ -27,7 +27,7 @@ fn get_positions (refs: WayRefIter, deps: &HashMap<i64, (f64, f64)>) -> Vec<(f32
 pub fn way (way: Way, deps: &HashMap<i64, (f64, f64)>) -> Result<Vec<u8>, Error> {
   let tags = way.tags()
     .into_iter()
-    .map(|a| Tag { K: String::from(a.0), V: String::from(a.1) })
+    .map(|a| Tag { key: String::from(a.0), value: String::from(a.1) })
     .collect();
 
   let mut refs = way.refs();
@@ -51,17 +51,19 @@ pub fn way (way: Way, deps: &HashMap<i64, (f64, f64)>) -> Result<Vec<u8>, Error>
   }
 }
 
-pub fn node (node: Node) -> Vec<u8> {
-  // TODO: reuse code in dense_node
-  let mut bytes: Vec<u8> = vec![];
-  bytes[0] = 0x01;
-  return bytes;
+pub fn node (node: Node)  -> Result<Vec<u8>, Error> {
+  let tags = node.tags()
+    .into_iter()
+    .map(|a| Tag { key: String::from(a.0), value: String::from(a.1) })
+    .collect();
+  let node = PeerNode { id: node.id(), lat: node.lat(), lon: node.lon(), tags };
+  return node.to_bytes_le();
 }
 
 pub fn dense_node (node: DenseNode) -> Result<Vec<u8>, Error> {
   let tags = node.tags()
     .into_iter()
-    .map(|a| Tag { K: String::from(a.0), V: String::from(a.1) })
+    .map(|a| Tag { key: String::from(a.0), value: String::from(a.1) })
     .collect();
   let node = PeerNode { id: node.id, lat: node.lat(), lon: node.lon(), tags };
   return node.to_bytes_le();

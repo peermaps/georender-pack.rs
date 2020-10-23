@@ -8,8 +8,8 @@ const PLACE_OTHER: i32 = 277;
 
 #[derive(Debug)]
 pub struct Tag { 
-  pub K: String,
-  pub V: String
+  pub key: String,
+  pub value: String
 }
 
 #[derive(Debug)]
@@ -46,15 +46,15 @@ fn parse_tags (tags: &Vec<Tag>) -> Result<(i32, Vec<u8>), Error> {
 
   for tag in tags {
     // TODO: there must be a better way?
-    let string = format!("{}.{}", tag.K, tag.V);
+    let string = format!("{}.{}", tag.key, tag.value);
     if ALL_TYPES.contains_key(&string) {
       t = ALL_TYPES.get(&string);
     }
-    let parsed_key = RE.replace_all(&tag.K, ":");
+    let parsed_key = RE.replace_all(&tag.key, ":");
     let len = parsed_key.len();
     labels.extend((len as u16).to_bytes_le()?);
     "=".bytes().map(|b| labels.push(b));
-    tag.V.bytes().map(|b| labels.push(b));
+    tag.value.bytes().map(|b| labels.push(b));
   }
 
   match t {
