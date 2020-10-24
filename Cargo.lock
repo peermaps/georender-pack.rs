@@ -208,6 +208,7 @@ dependencies = [
  "failure",
  "kv",
  "lazy_static",
+ "osm-is-area",
  "osmpbf",
  "regex",
  "varinteger",
@@ -322,6 +323,12 @@ dependencies = [
  "hermit-abi",
  "libc",
 ]
+
+[[package]]
+name = "osm-is-area"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbe1a12c97b697f468d9bdc87c6fef9049b62aebcc5436c43fb5d961a77726c5"
 
 [[package]]
 name = "osmpbf"

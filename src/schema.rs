@@ -7,23 +7,17 @@ use crate::osm_types;
 const PLACE_OTHER: i32 = 277;
 
 #[derive(Debug)]
-pub struct Tag { 
-  pub key: String,
-  pub value: String
-}
-
-#[derive(Debug)]
 pub struct PeerLine { 
   pub id: i64,
   pub positions: Vec<(f32, f32)>,
-  pub tags: Vec<Tag>
+  pub tags: Vec<(&'static str, &'static str)>
 }
 
 #[derive(Debug)]
 pub struct PeerArea { 
   pub id: i64,
   pub positions: Vec<(f32, f32)>,
-  pub tags: Vec<Tag>
+  pub tags: Vec<(&'static str, &'static str)>
 }
 
 #[derive(Debug)]
@@ -31,10 +25,10 @@ pub struct PeerNode {
   pub id: i64,
   pub lat: f64,
   pub lon: f64,
-  pub tags: Vec<Tag>
+  pub tags: Vec<(&'static str, &'static str)>
 }
 
-fn parse_tags (tags: &Vec<Tag>) -> Result<(i32, Vec<u8>), Error> {
+fn parse_tags (tags: &Vec<(&'static str, &'static str)>) -> Result<(i32, Vec<u8>), Error> {
   lazy_static! {
       static ref RE: Regex = Regex::new("(name:|_name:)").unwrap();
       static ref ALL_TYPES: HashMap<String, i32> = osm_types::get_types();
@@ -45,16 +39,15 @@ fn parse_tags (tags: &Vec<Tag>) -> Result<(i32, Vec<u8>), Error> {
   let mut t = None;
 
   for tag in tags {
-    // TODO: there must be a better way?
-    let string = format!("{}.{}", tag.key, tag.value);
+    let string = format!("{}.{}", tag.0, tag.1);
     if ALL_TYPES.contains_key(&string) {
       t = ALL_TYPES.get(&string);
     }
-    let parsed_key = RE.replace_all(&tag.key, ":");
+    let parsed_key = RE.replace_all(&tag.0, ":");
     let len = parsed_key.len();
     labels.extend((len as u16).to_bytes_le()?);
     "=".bytes().map(|b| labels.push(b));
-    tag.value.bytes().map(|b| labels.push(b));
+    tag.1.bytes().map(|b| labels.push(b));
   }
 
   match t {

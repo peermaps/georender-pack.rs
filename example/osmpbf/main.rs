@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use osmpbf::{ElementReader, Element};
 use std::error::Error;
 use std::env;
-use georender::encode;
+use georender::osmpbf::{from_dense_node, from_node, from_way};
 
 fn main() {
     run();
@@ -20,21 +20,21 @@ fn run() -> Result<(), Box<dyn Error>>  {
         match item {
             Element::DenseNode(dense) => {
                nodes.insert(dense.id, (dense.lat(), dense.lon()));
-               let encoded = encode::dense_node(dense);
+               let encoded = from_dense_node(dense);
             },
             Element::Relation(_rel) => {
                 // do nothing
             },
             Element::Node(node) => {
                nodes.insert(node.id(), (node.lat(), node.lon()));
-               encode::node(node);
+               from_node(node);
             },
             Element::Way(way) => {
                 for r in way.refs() {
                    let ref item = nodes[&r];
                    deps.entry(r).or_insert(*item);
                 }
-               let encoded = encode::way(way, &deps);
+               let encoded = from_way(way, &deps);
             }
         }
     }).unwrap();
