@@ -1,11 +1,50 @@
 use std::collections::HashMap;
-use osmpbf::{ElementReader, Element};
+use osmpbf::{ElementReader, Element, Way, Node, DenseNode};
 use std::error::Error;
 use std::env;
-use georender::osmpbf::{from_dense_node, from_node, from_way};
+use georender::encode;
+
+fn from_node (node: Node)  -> Vec<u8> {
+  let tags = node.tags()
+    .into_iter()
+    .clone()
+    .collect();
+
+  let buf = encode::node( 
+      node.id(), 
+      tags,
+      node.lon(), 
+      node.lat(),
+  );
+  return buf;
+}
+
+fn from_dense_node (node: DenseNode) -> Vec<u8> {
+  let tags = node.tags()
+    .into_iter()
+    .collect();
+  let buf = encode::node( 
+      node.id, 
+      tags,
+      node.lat(), 
+      node.lon()
+  );
+  return buf;
+}
+
+fn from_way (way: Way, deps: &HashMap<i64, (f64, f64)>) -> Vec<u8> {
+  let tags = way.tags()
+    .into_iter()
+    .collect();
+
+  let refs = way.refs()
+    .into_iter()
+    .collect();
+  return encode::way(way.id(), tags, refs, &deps)
+}
 
 fn main() {
-    run();
+  run();
 }
   
 fn run() -> Result<(), Box<dyn Error>>  {

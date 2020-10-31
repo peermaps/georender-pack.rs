@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use desert::{ToBytesLE};
 use regex::Regex;
 use std::collections::HashMap;
@@ -7,28 +8,33 @@ use crate::osm_types;
 const PLACE_OTHER: i32 = 277;
 
 #[derive(Debug)]
-pub struct PeerLine { 
-  pub id: i64,
-  pub positions: Vec<(f32, f32)>,
-  pub tags: Vec<(&'static str, &'static str)>
+pub struct Tags<'a> {
+  pub iter: Vec<(&'a str, &'a str)>
 }
 
 #[derive(Debug)]
-pub struct PeerArea { 
+pub struct PeerLine<'a> { 
   pub id: i64,
   pub positions: Vec<(f32, f32)>,
-  pub tags: Vec<(&'static str, &'static str)>
+  pub tags: Rc<Tags<'a>>
 }
 
 #[derive(Debug)]
-pub struct PeerNode { 
+pub struct PeerArea<'a> { 
+  pub id: i64,
+  pub positions: Vec<(f32, f32)>,
+  pub tags: Rc<Tags<'a>>
+}
+
+#[derive(Debug)]
+pub struct PeerNode<'a> { 
   pub id: i64,
   pub lat: f64,
   pub lon: f64,
-  pub tags: Vec<(&'static str, &'static str)>
+  pub tags: Rc<Tags<'a>>
 }
 
-fn parse_tags (tags: &Vec<(&'static str, &'static str)>) -> Result<(i32, Vec<u8>), Error> {
+fn parse_tags (tags: &Rc<Tags>) -> Result<(i32, Vec<u8>), Error> {
   lazy_static! {
       static ref RE: Regex = Regex::new("(name:|_name:)").unwrap();
       static ref ALL_TYPES: HashMap<String, i32> = osm_types::get_types();
@@ -38,7 +44,7 @@ fn parse_tags (tags: &Vec<(&'static str, &'static str)>) -> Result<(i32, Vec<u8>
   let typ;
   let mut t = None;
 
-  for tag in tags {
+  for tag in &tags.iter {
     let string = format!("{}.{}", tag.0, tag.1);
     if ALL_TYPES.contains_key(&string) {
       t = ALL_TYPES.get(&string);
@@ -46,8 +52,8 @@ fn parse_tags (tags: &Vec<(&'static str, &'static str)>) -> Result<(i32, Vec<u8>
     let parsed_key = RE.replace_all(&tag.0, ":");
     let len = parsed_key.len();
     labels.extend((len as u16).to_bytes_le()?);
-    "=".bytes().map(|b| labels.push(b));
-    tag.1.bytes().map(|b| labels.push(b));
+    "=".bytes().for_each(|b| labels.push(b));
+    tag.1.bytes().for_each(|b| labels.push(b));
   }
 
   match t {
@@ -58,7 +64,7 @@ fn parse_tags (tags: &Vec<(&'static str, &'static str)>) -> Result<(i32, Vec<u8>
   return Ok((typ, labels))
 }
 
-impl ToBytesLE for PeerNode {
+impl<'a> ToBytesLE for PeerNode<'a> {
   fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
     let (typ, labels) = parse_tags(&self.tags)?;
 
@@ -78,7 +84,7 @@ impl ToBytesLE for PeerNode {
   }
 }
 
-impl ToBytesLE for PeerLine {
+impl<'a> ToBytesLE for PeerLine<'a> {
   fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
     let len = self.positions.len();
     let (typ, labels) = parse_tags(&self.tags)?;
@@ -110,7 +116,7 @@ impl ToBytesLE for PeerLine {
   }
 }
 
-impl ToBytesLE for PeerArea {
+impl<'a> ToBytesLE for PeerArea<'a> {
   fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
     let (typ, labels) = parse_tags(&self.tags)?;
 
