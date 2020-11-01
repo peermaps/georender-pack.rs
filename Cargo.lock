@@ -206,6 +206,7 @@ version = "0.1.0"
 dependencies = [
  "desert",
  "failure",
+ "hex-slice",
  "kv",
  "lazy_static",
  "osm-is-area",
@@ -222,6 +223,12 @@ checksum = "1010591b26bbfe835e9faeabeb11866061cc7dcebffd56ad7d0942d0e61aefd8"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "hex-slice"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5491a308e0214554f07a81d8944abe45f552871c12e3c3c6e7e5d354039a6c4c"
 
 [[package]]
 name = "inflate"

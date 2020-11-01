@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub fn get_types () -> HashMap<String, i32> {
+pub fn get_types () -> HashMap<String, u64> {
   return [
     ("aeriealway.cable_car", 1),
     ("aerialway.canopy", 2),
@@ -500,5 +500,5 @@ pub fn get_types () -> HashMap<String, i32> {
     ("waterway.water_point",496),
     ("waterway.weir",497),
     ("waterway.other",498)
-  ].iter().map(|tup| (tup.0.to_string(), tup.1 as i32)).collect();
+  ].iter().map(|tup| (tup.0.to_string(), tup.1 as u64)).collect();
 }
