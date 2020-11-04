@@ -21,3 +21,8 @@ hex-slice = "0.1.4"
 name = "osmpbf"
 path = "example/osmpbf/main.rs"
 required-features = [ ]
+
+[[example]]
+name = "print"
+path = "example/print/main.rs"
+required-features = [ ]

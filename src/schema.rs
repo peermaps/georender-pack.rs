@@ -3,6 +3,7 @@ use desert::ToBytesLE;
 use failure::Error;
 use regex::Regex;
 use std::collections::HashMap;
+use hex_slice::AsHex;
 use std::rc::Rc;
 use varinteger;
 
@@ -10,21 +11,43 @@ const PLACE_OTHER: u64 = 277;
 
 #[derive(Debug)]
 pub struct Tags<'a> {
-    pub iter: Vec<(&'a str, &'a str)>,
+    pub iter: &'a Vec<(&'a str, &'a str)>,
 }
 
 #[derive(Debug)]
 pub struct PeerLine<'a> {
     pub id: u64,
-    pub positions: Vec<(f32, f32)>,
+    pub positions: &'a Vec<(f32, f32)>,
     pub tags: Rc<Tags<'a>>,
+}
+
+impl<'a> PeerLine<'a> {
+    pub fn new (id: u64, tags: &'a Vec<(&str, &str)>, positions: &'a Vec<(f32, f32)>) -> PeerLine<'a> {
+        let tags = Tags { iter: tags };
+        return PeerLine {
+            id: id,
+            positions: positions,
+            tags: Rc::new(tags)
+        };
+    }
 }
 
 #[derive(Debug)]
 pub struct PeerArea<'a> {
     pub id: u64,
-    pub positions: Vec<(f32, f32)>,
+    pub positions: &'a Vec<(f32, f32)>,
     pub tags: Rc<Tags<'a>>,
+}
+
+impl<'a> PeerArea<'a> {
+    pub fn new (id: u64, tags: &'a Vec<(&str, &str)>, positions: &'a Vec<(f32, f32)>) -> PeerArea<'a> {
+        let tags = Tags { iter: tags };
+        return PeerArea {
+            id: id,
+            positions: positions,
+            tags: Rc::new(tags)
+        };
+    }
 }
 
 #[derive(Debug)]
@@ -45,7 +68,7 @@ fn parse_tags(tags: &Rc<Tags>) -> Result<(u64, Vec<u8>), Error> {
     let typ;
     let mut t = None;
 
-    for tag in &tags.iter {
+    for tag in tags.iter {
         let string = format!("{}.{}", tag.0, tag.1);
         if ALL_TYPES.contains_key(&string) {
             t = ALL_TYPES.get(&string);
@@ -67,19 +90,47 @@ fn parse_tags(tags: &Rc<Tags>) -> Result<(u64, Vec<u8>), Error> {
     return Ok((typ, labels));
 }
 
+#[test]
+fn peer_line() {
+    let tags = vec![("source", "bing"), ("highway", "residential")];
+    let positions: Vec<(f32, f32)> = vec![
+        (31.184799400000003, 29.897739500000004),
+        (31.184888100000002, 29.898801400000004), 
+        (31.184858400000003, 29.8983899)
+    ];
+    let id: u64 = 234941233;
+    let line = PeerLine::new(id, &tags, &positions);
+
+    let bytes = line.to_bytes_le();
+    if !bytes.is_err() {
+        println!("{:x}", bytes.unwrap().plain_hex(false));
+    } else {
+        eprintln!("{:?}", bytes.err());
+    }
+}
+
+/*
+#[test]
+fn peer_node() {
+    let node = PeerNode {
+        id: 14231,
+    };
+
+    let bytes = node.to_bytes_le();
+    
+}
+*/
+
 impl<'a> ToBytesLE for PeerNode<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let (typ, labels) = parse_tags(&self.tags)?;
-
         // TODO: predict length of return value
         let mut buf = vec![0u8];
+        let mut offset: usize = 0;
         buf.push(0x01);
-        let typ_buf = &mut [0u8; 128];
-        varinteger::encode(typ, typ_buf);
-        buf.extend(typ_buf.into_iter());
-        let id_buf = &mut [0u8; 128];
-        varinteger::encode(self.id, id_buf);
-        buf.extend(id_buf.into_iter());
+        offset += 1;
+        offset += varinteger::encode_with_offset(typ, &mut buf, offset);
+        varinteger::encode_with_offset(self.id, &mut buf, offset);
 
         // TODO: float32 not 64
         buf.extend((self.lon as f32).to_bytes_le()?);
@@ -93,26 +144,24 @@ impl<'a> ToBytesLE for PeerNode<'a> {
 
 impl<'a> ToBytesLE for PeerLine<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-        let len = self.positions.len();
         let (typ, labels) = parse_tags(&self.tags)?;
-
+        let typ_length = varinteger::length(typ);
+        let id_length = varinteger::length(typ);
         // TODO: predict length of return value
-        let mut buf = vec![0u8];
-
-        // Feature type
+        let label_length = labels.len();
+        let mut buf = vec![0u8; 9 + typ_length + id_length + label_length];
+        println!("{}", buf.len());
+        let mut offset: usize = 0;
         buf.push(0x02);
+        offset += 1;
+        offset += varinteger::encode_with_offset(typ, &mut buf, offset);
+        offset += varinteger::encode_with_offset(self.id, &mut buf, offset);
 
-        // Type
-        buf.extend(&typ.to_bytes_le()?);
-
-        // id
-        buf.extend(&self.id.to_bytes_le()?);
-
-        // p_count (# positions)
-        buf.extend(&(len as u8).to_bytes_le()?);
+        let len = self.positions.len();
+        varinteger::encode_with_offset(len as u64, &mut buf, offset);
 
         // positions
-        for (lon, lat) in &self.positions {
+        for (lon, lat) in self.positions {
             buf.extend(&lon.to_bytes_le()?);
             buf.extend(&lat.to_bytes_le()?);
         }
@@ -144,7 +193,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
         buf.extend(&(len as u8).to_le_bytes());
 
         // positions
-        for (lon, lat) in &self.positions {
+        for (lon, lat) in self.positions {
             buf.extend(&lon.to_bytes_le()?);
             buf.extend(&lat.to_bytes_le()?);
         }
