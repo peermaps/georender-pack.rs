@@ -124,22 +124,27 @@ fn peer_node() {
     };
 
     let bytes = node.to_bytes_le();
-    
+
 }
 */
 
 impl<'a> ToBytesLE for PeerNode<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let (typ, labels) = parse_tags(&self.tags)?;
-        // TODO: predict length of return value
-        let mut buf = vec![0u8];
-        let mut offset: usize = 0;
+        let typ_length = varinteger::length(typ);
+        let id_length = varinteger::length(self.id);
+        let label_length = labels.len();
+        let mut buf = vec![0u8; 10 + typ_length + id_length];
         buf.push(0x01);
-        offset += 1;
-        offset += varinteger::encode_with_offset(typ, &mut buf, offset);
-        varinteger::encode_with_offset(self.id, &mut buf, offset);
 
-        // TODO: float32 not 64
+        let mut typbuf = vec![0u8; typ_length];
+        varinteger::encode(typ, &mut typbuf);
+        buf.extend(typbuf);
+
+        let mut idbuf = vec![0u8; id_length];
+        varinteger::encode(self.id, &mut idbuf);
+        buf.extend(idbuf);
+
         buf.extend((self.lon as f32).to_bytes_le()?);
         buf.extend((self.lat as f32).to_bytes_le()?);
         buf.extend(labels);
