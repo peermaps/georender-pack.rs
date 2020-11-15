@@ -3,7 +3,6 @@ use desert::ToBytesLE;
 use failure::Error;
 use regex::Regex;
 use std::collections::HashMap;
-use hex_slice::AsHex;
 use std::rc::Rc;
 use varinteger;
 
@@ -22,12 +21,16 @@ pub struct PeerLine<'a> {
 }
 
 impl<'a> PeerLine<'a> {
-    pub fn new (id: u64, tags: &'a Vec<(&str, &str)>, positions: &'a Vec<(f32, f32)>) -> PeerLine<'a> {
+    pub fn new(
+        id: u64,
+        tags: &'a Vec<(&str, &str)>,
+        positions: &'a Vec<(f32, f32)>,
+    ) -> PeerLine<'a> {
         let tags = Tags { iter: tags };
         return PeerLine {
             id: id,
             positions: positions,
-            tags: Rc::new(tags)
+            tags: Rc::new(tags),
         };
     }
 }
@@ -40,12 +43,16 @@ pub struct PeerArea<'a> {
 }
 
 impl<'a> PeerArea<'a> {
-    pub fn new (id: u64, tags: &'a Vec<(&str, &str)>, positions: &'a Vec<(f32, f32)>) -> PeerArea<'a> {
+    pub fn new(
+        id: u64,
+        tags: &'a Vec<(&str, &str)>,
+        positions: &'a Vec<(f32, f32)>,
+    ) -> PeerArea<'a> {
         let tags = Tags { iter: tags };
         return PeerArea {
             id: id,
             positions: positions,
-            tags: Rc::new(tags)
+            tags: Rc::new(tags),
         };
     }
 }
@@ -95,8 +102,8 @@ fn peer_line() {
     let tags = vec![("source", "bing"), ("highway", "residential")];
     let positions: Vec<(f32, f32)> = vec![
         (31.184799400000003, 29.897739500000004),
-        (31.184888100000002, 29.898801400000004), 
-        (31.184858400000003, 29.8983899)
+        (31.184888100000002, 29.898801400000004),
+        (31.184858400000003, 29.8983899),
     ];
     let id: u64 = 234941233;
     let line = PeerLine::new(id, &tags, &positions);
