@@ -1,4 +1,4 @@
-use crate::schema::{PeerArea, PeerLine, PeerNode, Tags};
+use crate::{PeerArea, PeerLine, PeerNode, Tags};
 use desert::ToBytesLE;
 use osm_is_area;
 use std::collections::HashMap;
@@ -28,7 +28,7 @@ pub fn way(
         return buf;
     } else if len > 1 {
         let positions = get_positions(&refs, &deps);
-        let line  = PeerLine::new(id, &tags, &positions);
+        let line = PeerLine::new(id, &tags, &positions);
         let buf = line.to_bytes_le().unwrap();
         return buf;
     } else {
