@@ -15,7 +15,7 @@ regex = "1"
 lazy_static = "1.4.0"
 failure = "0.1.8"
 osm-is-area = "0.1.3"
-hex-slice = "0.1.4"
+hex = "0.4.2"
 
 [[example]]
 name = "osmpbf"

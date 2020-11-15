@@ -1,5 +1,5 @@
 use georender::encode;
-use hex_slice::AsHex;
+use hex;
 use osmpbf::{DenseNode, Element, ElementReader, Node, Way};
 use std::collections::HashMap;
 use std::env;
@@ -31,7 +31,6 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
-
     let reader = ElementReader::from_path(&args[1]).unwrap();
 
     let mut nodes: HashMap<i64, (f64, f64)> = HashMap::new();
@@ -43,7 +42,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 Element::DenseNode(dense) => {
                     nodes.insert(dense.id, (dense.lat(), dense.lon()));
                     let encoded = from_dense_node(dense);
-                    println!("{:x}", encoded.plain_hex(false))
+                    println!("{}", hex::encode(encoded));
                 }
                 Element::Relation(_rel) => {
                     // do nothing
@@ -51,7 +50,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 Element::Node(node) => {
                     nodes.insert(node.id(), (node.lat(), node.lon()));
                     let encoded = from_node(node);
-                    println!("{:x}", encoded.plain_hex(false))
+                    println!("{}", hex::encode(encoded));
                 }
                 Element::Way(way) => {
                     for r in way.refs() {
@@ -59,7 +58,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                         deps.entry(r).or_insert(*item);
                     }
                     let encoded = from_way(way, &deps);
-                    println!("{:x}", encoded.plain_hex(false))
+                    println!("{}", hex::encode(encoded));
                 }
             }
         })
