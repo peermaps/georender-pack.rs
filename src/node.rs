@@ -29,8 +29,7 @@ impl<'a> ToBytesLE for PeerNode<'a> {
         let (typ, labels) = parse_tags(&self.tags)?;
         let typ_length = varinteger::length(typ);
         let id_length = varinteger::length(self.id);
-        let label_length = labels.len();
-        let mut buf = vec![0u8; 9 + typ_length + id_length + label_length];
+        let mut buf = vec![0u8];
         buf.push(0x01);
 
         let mut typbuf = vec![0u8; typ_length];

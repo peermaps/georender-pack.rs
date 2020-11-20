@@ -4,8 +4,8 @@ extern crate lazy_static;
 pub mod encode;
 pub mod osm_types;
 
-pub mod tags;
-pub use tags::*;
+pub mod labels;
+pub use labels::*;
 
 mod node;
 pub use node::*;
