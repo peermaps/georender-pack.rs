@@ -1,3 +1,4 @@
+use crate::varint;
 use crate::{parse_tags, Tags};
 use desert::ToBytesLE;
 use failure::Error;
@@ -29,9 +30,9 @@ impl<'a> ToBytesLE for PeerArea<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let (typ, labels) = parse_tags(&self.tags)?;
         let pcount = self.positions.len() as u64;
-        let typ_length = varinteger::length(typ);
-        let id_length = varinteger::length(self.id);
-        let pcount_length = varinteger::length(pcount);
+        let typ_length = varint::length(typ);
+        let id_length = varint::length(self.id);
+        let pcount_length = varint::length(pcount);
         let label_length = labels.len();
         let mut buf = vec![
             0u8;
@@ -44,15 +45,15 @@ impl<'a> ToBytesLE for PeerArea<'a> {
         ];
         buf.push(0x02);
         let mut typbuf = vec![0u8; typ_length];
-        varinteger::encode(typ, &mut typbuf);
+        varint::encode(typ, &mut typbuf);
         buf.extend(typbuf);
 
         let mut idbuf = vec![0u8; id_length];
-        varinteger::encode(self.id, &mut idbuf);
+        varint::encode(self.id, &mut idbuf);
         buf.extend(idbuf);
 
         let mut pcount_buf = vec![0u8; pcount_length];
-        varinteger::encode(self.id, &mut pcount_buf);
+        varint::encode(self.id, &mut pcount_buf);
         buf.extend(pcount_buf);
 
         // positions

@@ -1,8 +1,9 @@
+use crate::varint;
 use crate::{parse_tags, Tags};
 use desert::ToBytesLE;
 use failure::Error;
+use hex;
 use std::rc::Rc;
-use varinteger;
 
 #[test]
 fn peer_line() {
@@ -15,12 +16,8 @@ fn peer_line() {
     let id: u64 = 234941233;
     let line = PeerLine::new(id, &tags, &positions);
 
-    let bytes = line.to_bytes_le();
-    if !bytes.is_err() {
-        println!("{:x}", bytes.unwrap().plain_hex(false));
-    } else {
-        eprintln!("{:?}", bytes.err());
-    }
+    let bytes = line.to_bytes_le().unwrap();
+    println!("{}", hex::encode(bytes));
 }
 
 #[derive(Debug)]
@@ -49,32 +46,23 @@ impl<'a> ToBytesLE for PeerLine<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let (typ, labels) = parse_tags(&self.tags)?;
         let pcount = self.positions.len() as u64;
-        let typ_length = varinteger::length(typ);
-        let id_length = varinteger::length(self.id);
-        let pcount_length = varinteger::length(pcount);
-        let label_length = labels.len();
-        let mut buf = vec![
-            0u8;
-            9 + typ_length
-                + id_length
-                + pcount_length
-                + (self.positions.len() * 8)
-                + label_length
-        ];
-        buf.push(0x02);
-        let mut typbuf = vec![0u8; typ_length];
-        varinteger::encode(typ, &mut typbuf);
-        buf.extend(typbuf);
+        let typ_length = varint::length(typ);
+        let id_length = varint::length(self.id);
+        let pcount_length = varint::length(pcount);
 
-        let mut idbuf = vec![0u8; id_length];
-        varinteger::encode(self.id, &mut idbuf);
-        buf.extend(idbuf);
+        let mut buf = vec![0u8; 1 + typ_length + id_length + pcount_length];
+        let mut offset = 0;
 
-        let mut pcount_buf = vec![0u8; pcount_length];
-        varinteger::encode(self.id, &mut pcount_buf);
-        buf.extend(pcount_buf);
+        buf[offset] = 0x02;
 
-        // positions
+        offset += 1;
+
+        offset += varint::encode_with_offset(typ, &mut buf, offset)?;
+
+        offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
+
+        varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
+
         for (lon, lat) in self.positions {
             buf.extend(&lon.to_bytes_le()?);
             buf.extend(&lat.to_bytes_le()?);

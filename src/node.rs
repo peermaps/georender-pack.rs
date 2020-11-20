@@ -34,8 +34,7 @@ impl<'a> ToBytesLE for PeerNode<'a> {
 
         let mut offset = 1;
         offset += varint::encode_with_offset(typ, &mut buf, offset)?;
-
-        offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
+        varint::encode_with_offset(self.id, &mut buf, offset)?;
 
         buf.extend((self.lon as f32).to_bytes_le()?);
         buf.extend((self.lat as f32).to_bytes_le()?);
