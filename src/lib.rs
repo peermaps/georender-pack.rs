@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate lazy_static;
 
+pub mod varint;
+
 pub mod encode;
 pub mod osm_types;
 
