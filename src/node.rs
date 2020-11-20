@@ -4,17 +4,17 @@ use desert::ToBytesLE;
 use failure::Error;
 use std::rc::Rc;
 
-/*
 #[test]
 fn peer_node() {
-    let node = PeerNode {
-        id: 14231,
-    };
+    let tags = vec![("name", "Neu Broderstorf"), ("traffic_sign", "city_limit")];
+    let node = PeerNode::new(1831881213, 54.09006660000001, 12.253938100000001, &tags);
 
-    let bytes = node.to_bytes_le();
-
+    let bytes = node.to_bytes_le().unwrap();
+    assert_eq!(
+        hex::encode(bytes),
+        "019502fd93c1e906211044413a5c5842103d4e65752042726f64657273746f726600"
+    );
 }
-*/
 
 #[derive(Debug)]
 pub struct PeerNode<'a> {
@@ -22,6 +22,18 @@ pub struct PeerNode<'a> {
     pub lat: f64,
     pub lon: f64,
     pub tags: Rc<Tags<'a>>,
+}
+
+impl<'a> PeerNode<'a> {
+    pub fn new(id: u64, lat: f64, lon: f64, tags: &'a Vec<(&str, &str)>) -> PeerNode<'a> {
+        let tags = Tags { iter: tags };
+        return PeerNode {
+            id: id,
+            lat: lat,
+            lon: lon,
+            tags: Rc::new(tags),
+        };
+    }
 }
 
 impl<'a> ToBytesLE for PeerNode<'a> {
