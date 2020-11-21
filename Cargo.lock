@@ -142,6 +142,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "earcutr"
+version = "0.1.0"
+source = "git+https://github.com/donbright/earcutr.git#aaa18bfdfe581db26bb9869aec170329b4e14f4c"
+
+[[package]]
 name = "either"
 version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -205,6 +210,7 @@ name = "georender"
 version = "0.1.0"
 dependencies = [
  "desert",
+ "earcutr",
  "failure",
  "hex",
  "kv",
