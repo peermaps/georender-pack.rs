@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{parse_tags, point};
+use crate::{label, point};
 use desert::ToBytesLE;
 use failure::Error;
 
@@ -35,7 +35,7 @@ impl<'a> PeerLine<'a> {
         tags: &'a Vec<(&str, &str)>,
         positions: &'a Vec<(f64, f64)>,
     ) -> PeerLine<'a> {
-        let (typ, label) = parse_tags(tags);
+        let (typ, label) = label::parse_tags(tags);
         return PeerLine {
             id: id,
             positions: positions,
@@ -52,7 +52,11 @@ impl<'a> ToBytesLE for PeerLine<'a> {
         let id_length = varint::length(self.id);
         let pcount_length = varint::length(pcount as u64);
 
-        let mut buf = vec![0u8; 1 + typ_length + id_length + pcount_length + (2 * 4 * pcount)];
+        let mut buf =
+            vec![
+                0u8;
+                1 + typ_length + id_length + pcount_length + (2 * 4 * pcount) + self.label.len()
+            ];
         let mut offset = 0;
         buf[offset] = 0x02;
         offset += 1;
@@ -68,7 +72,7 @@ impl<'a> ToBytesLE for PeerLine<'a> {
             offset += point::encode_with_offset(*lat, &mut buf, offset)?;
         }
 
-        buf.extend(&self.label);
+        label::encode_with_offset(&self.label, &mut buf, offset);
         return Ok(buf);
     }
 }

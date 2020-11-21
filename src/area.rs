@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{parse_tags, point};
+use crate::{label, point};
 use desert::ToBytesLE;
 use earcutr;
 use failure::Error;
@@ -41,7 +41,7 @@ impl<'a> PeerArea<'a> {
         tags: &'a Vec<(&str, &str)>,
         positions: &'a Vec<(f64, f64)>,
     ) -> PeerArea<'a> {
-        let (typ, label) = parse_tags(tags);
+        let (typ, label) = label::parse_tags(tags);
         return PeerArea {
             id: id,
             positions: positions,
@@ -78,11 +78,16 @@ impl<'a> ToBytesLE for PeerArea<'a> {
             .iter()
             .fold(0, |acc, c| acc + varint::length(*c as u64));
 
-        let mut buf =
-            vec![
-                0u8;
-                1 + typ_length + id_length + pcount_length + (2 * 4 * pcount) + clen + clen_data
-            ];
+        let mut buf = vec![
+            0u8;
+            1 + typ_length
+                + id_length
+                + pcount_length
+                + (2 * 4 * pcount)
+                + clen
+                + clen_data
+                + self.label.len()
+        ];
 
         let mut offset = 0;
         buf[offset] = 0x03;
@@ -105,7 +110,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
             offset += varint::encode_with_offset(cell as u64, &mut buf, offset)?;
         }
 
-        buf.extend(&self.label);
+        label::encode_with_offset(&self.label, &mut buf, offset);
         return Ok(buf);
     }
 }

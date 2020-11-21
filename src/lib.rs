@@ -6,8 +6,7 @@ pub mod varint;
 pub mod encode;
 pub mod osm_types;
 
-pub mod labels;
-pub use labels::*;
+pub mod label;
 
 mod node;
 pub use node::*;

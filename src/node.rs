@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{parse_tags, point};
+use crate::{label, point};
 use desert::ToBytesLE;
 use failure::Error;
 
@@ -26,7 +26,7 @@ pub struct PeerNode {
 
 impl PeerNode {
     pub fn new(id: u64, lon: f64, lat: f64, tags: &Vec<(&str, &str)>) -> PeerNode {
-        let (typ, label) = parse_tags(&tags);
+        let (typ, label) = label::parse_tags(&tags);
         return PeerNode {
             id: id,
             lon: lon,
@@ -41,7 +41,7 @@ impl ToBytesLE for PeerNode {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let typ_length = varint::length(self.typ);
         let id_length = varint::length(self.id);
-        let mut buf = vec![0u8; 1 + typ_length + id_length + 2 * 4];
+        let mut buf = vec![0u8; 1 + typ_length + id_length + 2 * 4 + self.label.len()];
         buf[0] = 0x01;
 
         let mut offset = 1;
@@ -50,8 +50,8 @@ impl ToBytesLE for PeerNode {
 
         offset += point::encode_with_offset(self.lon, &mut buf, offset)?;
         offset += point::encode_with_offset(self.lat, &mut buf, offset)?;
-        buf.extend(&self.label);
 
+        label::encode_with_offset(&self.label, &mut buf, offset);
         return Ok(buf);
     }
 }
