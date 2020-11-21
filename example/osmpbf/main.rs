@@ -20,20 +20,20 @@ fn run() -> Result<(), Box<dyn Error>> {
         .for_each(|item| {
             match item {
                 Element::DenseNode(node) => {
-                    nodes.insert(node.id, (node.lon(), node.lat()));
+                    let point = (node.lon(), node.lat());
+                    nodes.insert(node.id, point);
                     let tags = node.tags().into_iter().collect();
-                    let encoded =
-                        encode::node(node.id as u64, node.lon(), node.lat(), tags).unwrap();
+                    let encoded = encode::node(node.id as u64, point, tags).unwrap();
                     println!("{}", hex::encode(encoded));
                 }
                 Element::Relation(_rel) => {
                     // do nothing
                 }
                 Element::Node(node) => {
-                    nodes.insert(node.id(), (node.lon(), node.lat()));
+                    let point = (node.lon(), node.lat());
+                    nodes.insert(node.id(), point);
                     let tags = node.tags().into_iter().collect();
-                    let encoded =
-                        encode::node(node.id() as u64, node.lon(), node.lat(), tags).unwrap();
+                    let encoded = encode::node(node.id() as u64, point, tags).unwrap();
                     println!("{}", hex::encode(encoded));
                 }
                 Element::Way(way) => {

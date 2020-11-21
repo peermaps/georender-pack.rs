@@ -6,7 +6,9 @@ use failure::Error;
 #[test]
 fn peer_node() {
     let tags = vec![("name", "Neu Broderstorf"), ("traffic_sign", "city_limit")];
-    let node = PeerNode::new(1831881213, 12.253938100000001, 54.09006660000001, &tags);
+    let lon = 12.253938100000001;
+    let lat = 54.09006660000001;
+    let node = PeerNode::new(1831881213, (lon, lat), &tags);
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
@@ -18,14 +20,13 @@ fn peer_node() {
 #[derive(Debug)]
 pub struct PeerNode<'a> {
     pub id: u64,
-    pub lon: f64,
-    pub lat: f64,
+    pub point: (f64, f64),
     pub tags: &'a Vec<(&'a str, &'a str)>,
 }
 
 impl<'a> PeerNode<'a> {
-    pub fn new(id: u64, lon: f64, lat: f64, tags: &'a Vec<(&'a str, &'a str)>) -> PeerNode {
-        return PeerNode { id, lon, lat, tags };
+    pub fn new(id: u64, point: (f64, f64), tags: &'a Vec<(&'a str, &'a str)>) -> PeerNode {
+        return PeerNode { id, point, tags };
     }
 }
 
@@ -41,8 +42,8 @@ impl<'a> ToBytesLE for PeerNode<'a> {
         offset += varint::encode_with_offset(typ, &mut buf, offset)?;
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
 
-        offset += point::encode_with_offset(self.lon, &mut buf, offset)?;
-        offset += point::encode_with_offset(self.lat, &mut buf, offset)?;
+        offset += point::encode_with_offset(self.point.0, &mut buf, offset)?;
+        offset += point::encode_with_offset(self.point.1, &mut buf, offset)?;
 
         label::encode_with_offset(&label, &mut buf, offset);
         return Ok(buf);

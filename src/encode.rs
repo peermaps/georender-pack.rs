@@ -6,8 +6,8 @@ use std::collections::HashMap;
 
 // Some convenience functions
 
-pub fn node(id: u64, lon: f64, lat: f64, tags: Vec<(&str, &str)>) -> Result<Vec<u8>, Error> {
-    let node = PeerNode::new(id, lon, lat, &tags);
+pub fn node(id: u64, point: (f64, f64), tags: Vec<(&str, &str)>) -> Result<Vec<u8>, Error> {
+    let node = PeerNode::new(id, point, &tags);
     return node.to_bytes_le();
 }
 
