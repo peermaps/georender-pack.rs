@@ -1,9 +1,7 @@
 use crate::varint;
-use crate::{parse_tags, point, Tags};
+use crate::{parse_tags, point};
 use desert::ToBytesLE;
 use failure::Error;
-use hex;
-use std::rc::Rc;
 
 #[test]
 fn peer_line() {
@@ -27,7 +25,8 @@ fn peer_line() {
 pub struct PeerLine<'a> {
     pub id: u64,
     pub positions: &'a Vec<(f64, f64)>,
-    pub tags: Rc<Tags<'a>>,
+    pub typ: u64,
+    pub label: Vec<u8>,
 }
 
 impl<'a> PeerLine<'a> {
@@ -36,20 +35,20 @@ impl<'a> PeerLine<'a> {
         tags: &'a Vec<(&str, &str)>,
         positions: &'a Vec<(f64, f64)>,
     ) -> PeerLine<'a> {
-        let tags = Tags { iter: tags };
+        let (typ, label) = parse_tags(tags);
         return PeerLine {
             id: id,
             positions: positions,
-            tags: Rc::new(tags),
+            typ: typ,
+            label: label,
         };
     }
 }
 
 impl<'a> ToBytesLE for PeerLine<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-        let (typ, labels) = parse_tags(&self.tags)?;
         let pcount = self.positions.len();
-        let typ_length = varint::length(typ);
+        let typ_length = varint::length(self.typ);
         let id_length = varint::length(self.id);
         let pcount_length = varint::length(pcount as u64);
 
@@ -58,7 +57,7 @@ impl<'a> ToBytesLE for PeerLine<'a> {
         buf[offset] = 0x02;
         offset += 1;
 
-        offset += varint::encode_with_offset(typ, &mut buf, offset)?;
+        offset += varint::encode_with_offset(self.typ, &mut buf, offset)?;
 
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
 
@@ -69,7 +68,7 @@ impl<'a> ToBytesLE for PeerLine<'a> {
             offset += point::encode_with_offset(*lat, &mut buf, offset)?;
         }
 
-        buf.extend(labels);
+        buf.extend(&self.label);
         return Ok(buf);
     }
 }

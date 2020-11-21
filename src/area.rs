@@ -1,9 +1,8 @@
 use crate::varint;
-use crate::{parse_tags, point, Tags};
+use crate::{parse_tags, point};
 use desert::ToBytesLE;
 use earcutr;
 use failure::Error;
-use std::rc::Rc;
 
 #[test]
 fn peer_area() {
@@ -32,7 +31,8 @@ fn peer_area() {
 pub struct PeerArea<'a> {
     pub id: u64,
     pub positions: &'a Vec<(f64, f64)>,
-    pub tags: Rc<Tags<'a>>,
+    pub typ: u64,
+    pub label: Vec<u8>,
 }
 
 impl<'a> PeerArea<'a> {
@@ -41,11 +41,12 @@ impl<'a> PeerArea<'a> {
         tags: &'a Vec<(&str, &str)>,
         positions: &'a Vec<(f64, f64)>,
     ) -> PeerArea<'a> {
-        let tags = Tags { iter: tags };
+        let (typ, label) = parse_tags(tags);
         return PeerArea {
             id: id,
             positions: positions,
-            tags: Rc::new(tags),
+            typ: typ,
+            label: label,
         };
     }
 }
@@ -66,9 +67,8 @@ fn earcut(positions: &Vec<(f64, f64)>) -> Vec<usize> {
 
 impl<'a> ToBytesLE for PeerArea<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-        let (typ, labels) = parse_tags(&self.tags)?;
         let pcount = self.positions.len();
-        let typ_length = varint::length(typ);
+        let typ_length = varint::length(self.typ);
         let id_length = varint::length(self.id);
         let pcount_length = varint::length(pcount as u64);
 
@@ -88,7 +88,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
         buf[offset] = 0x03;
 
         offset += 1;
-        offset += varint::encode_with_offset(typ, &mut buf, offset)?;
+        offset += varint::encode_with_offset(self.typ, &mut buf, offset)?;
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
         offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
@@ -105,7 +105,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
             offset += varint::encode_with_offset(cell as u64, &mut buf, offset)?;
         }
 
-        buf.extend(labels);
+        buf.extend(&self.label);
         return Ok(buf);
     }
 }

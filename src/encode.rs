@@ -1,16 +1,10 @@
-use crate::{PeerArea, PeerLine, PeerNode, Tags};
+use crate::{PeerArea, PeerLine, PeerNode};
 use desert::ToBytesLE;
 use osm_is_area;
 use std::collections::HashMap;
-use std::rc::Rc;
 
-pub fn node(id: u64, tags: Vec<(&str, &str)>, lat: f64, lon: f64) -> Vec<u8> {
-    let node = PeerNode {
-        id: id,
-        tags: Rc::new(Tags { iter: &tags }),
-        lat: lat,
-        lon: lon,
-    };
+pub fn node(id: u64, tags: Vec<(&str, &str)>, lon: f64, lat: f64) -> Vec<u8> {
+    let node = PeerNode::new(id, lon, lat, &tags);
     return node.to_bytes_le().unwrap();
 }
 
