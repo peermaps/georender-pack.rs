@@ -36,7 +36,7 @@ pub fn way(
     }
 }
 
-fn get_positions(refs: &Vec<i64>, deps: &HashMap<i64, (f64, f64)>) -> Vec<(f32, f32)> {
+fn get_positions(refs: &Vec<i64>, deps: &HashMap<i64, (f64, f64)>) -> Vec<(f64, f64)> {
     let mut positions = Vec::new();
     // positions
     for r in refs {
@@ -46,7 +46,7 @@ fn get_positions(refs: &Vec<i64>, deps: &HashMap<i64, (f64, f64)>) -> Vec<(f32, 
             Some(dep) => {
                 lon = dep.0;
                 lat = dep.1;
-                positions.push((lon as f32, lat as f32));
+                positions.push((lon, lat));
             }
             None => println!("Could not find dep for {}", &r),
         }

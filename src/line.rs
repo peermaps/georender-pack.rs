@@ -8,7 +8,7 @@ use std::rc::Rc;
 #[test]
 fn peer_line() {
     let tags = vec![("source", "bing"), ("highway", "residential")];
-    let positions: Vec<(f32, f32)> = vec![
+    let positions: Vec<(f64, f64)> = vec![
         (31.184799400000003, 29.897739500000004),
         (31.184888100000002, 29.898801400000004),
         (31.184858400000003, 29.8983899),
@@ -26,7 +26,7 @@ fn peer_line() {
 #[derive(Debug)]
 pub struct PeerLine<'a> {
     pub id: u64,
-    pub positions: &'a Vec<(f32, f32)>,
+    pub positions: &'a Vec<(f64, f64)>,
     pub tags: Rc<Tags<'a>>,
 }
 
@@ -34,7 +34,7 @@ impl<'a> PeerLine<'a> {
     pub fn new(
         id: u64,
         tags: &'a Vec<(&str, &str)>,
-        positions: &'a Vec<(f32, f32)>,
+        positions: &'a Vec<(f64, f64)>,
     ) -> PeerLine<'a> {
         let tags = Tags { iter: tags };
         return PeerLine {
@@ -65,8 +65,8 @@ impl<'a> ToBytesLE for PeerLine<'a> {
         varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
         for (lon, lat) in self.positions {
-            buf.extend(&lon.to_bytes_le()?);
-            buf.extend(&lat.to_bytes_le()?);
+            buf.extend((*lon as f32).to_bytes_le()?);
+            buf.extend((*lat as f32).to_bytes_le()?);
         }
 
         buf.extend(labels);

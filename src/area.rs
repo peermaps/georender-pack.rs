@@ -7,7 +7,7 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub struct PeerArea<'a> {
     pub id: u64,
-    pub positions: &'a Vec<(f32, f32)>,
+    pub positions: &'a Vec<(f64, f64)>,
     pub tags: Rc<Tags<'a>>,
 }
 
@@ -15,7 +15,7 @@ impl<'a> PeerArea<'a> {
     pub fn new(
         id: u64,
         tags: &'a Vec<(&str, &str)>,
-        positions: &'a Vec<(f32, f32)>,
+        positions: &'a Vec<(f64, f64)>,
     ) -> PeerArea<'a> {
         let tags = Tags { iter: tags };
         return PeerArea {
