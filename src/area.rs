@@ -5,6 +5,29 @@ use earcutr;
 use failure::Error;
 use std::rc::Rc;
 
+#[test]
+fn peer_area() {
+    let tags = vec![
+        ("source", "bing"),
+        ("boundary", "protected_area"),
+        ("tiger:cfcc", "A41"),
+    ];
+    let positions: Vec<(f64, f64)> = vec![
+        (31.184799400000003, 29.897739500000004),
+        (31.184888100000002, 29.898801400000004),
+        (31.184858400000003, 29.8983899),
+        (31.184799400000003, 29.897739500000004),
+    ];
+    let id: u64 = 234941233;
+    let line = PeerArea::new(id, &tags, &positions);
+
+    let bytes = line.to_bytes_le().unwrap();
+    assert_eq!(
+        "03ae01b1d6837004787af941922eef41a77af941bf30ef41977af941e72fef41787af941922eef410301020000",
+        hex::encode(bytes)
+    );
+}
+
 #[derive(Debug)]
 pub struct PeerArea<'a> {
     pub id: u64,
