@@ -3,7 +3,9 @@ use desert::ToBytesLE;
 use osm_is_area;
 use std::collections::HashMap;
 
-pub fn node(id: u64, tags: Vec<(&str, &str)>, lon: f64, lat: f64) -> Vec<u8> {
+// Some convenience functions
+
+pub fn node(id: u64, lon: f64, lat: f64, tags: Vec<(&str, &str)>) -> Vec<u8> {
     let node = PeerNode::new(id, lon, lat, &tags);
     return node.to_bytes_le().unwrap();
 }
