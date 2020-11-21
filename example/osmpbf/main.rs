@@ -14,7 +14,7 @@ fn from_node(node: Node) -> Vec<u8> {
 
 fn from_dense_node(node: DenseNode) -> Vec<u8> {
     let tags = node.tags();
-    let buf = encode::node(node.id as u64, tags, node.lon(), node.lat());
+    let buf = encode::node(node.id as u64, node.lon(), node.lat(), tags);
     return buf;
 }
 
