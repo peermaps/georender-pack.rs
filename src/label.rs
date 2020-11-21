@@ -1,5 +1,6 @@
 use crate::osm_types;
 use crate::varint;
+use failure::Error;
 use regex::Regex;
 use std::collections::HashMap;
 
@@ -41,7 +42,7 @@ pub fn get_label_length(tags: &Vec<(&str, &str)>) -> usize {
     return label_len;
 }
 
-pub fn parse_tags(tags: &Vec<(&str, &str)>) -> (u64, Vec<u8>) {
+pub fn parse_tags(tags: &Vec<(&str, &str)>) -> Result<(u64, Vec<u8>), Error> {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
         static ref ALL_TYPES: HashMap<&'static str, u64> = osm_types::get_types();
@@ -70,7 +71,7 @@ pub fn parse_tags(tags: &Vec<(&str, &str)>) -> (u64, Vec<u8>) {
                         offset += is_offset;
                     }
                     Err(_) => {
-                        println!("Failed to encode tag {}.{}", tag.0, tag.1);
+                        bail!("Failed to encode tag {}.{}", tag.0, tag.1);
                     }
                 }
 
@@ -94,5 +95,5 @@ pub fn parse_tags(tags: &Vec<(&str, &str)>) -> (u64, Vec<u8>) {
         None => typ = PLACE_OTHER,
     }
 
-    return (typ, label);
+    return Ok((typ, label));
 }

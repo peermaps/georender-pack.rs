@@ -25,8 +25,7 @@ fn peer_line() {
 pub struct PeerLine<'a> {
     pub id: u64,
     pub positions: &'a Vec<(f64, f64)>,
-    pub typ: u64,
-    pub label: Vec<u8>,
+    pub tags: &'a Vec<(&'a str, &'a str)>,
 }
 
 impl<'a> PeerLine<'a> {
@@ -35,33 +34,29 @@ impl<'a> PeerLine<'a> {
         tags: &'a Vec<(&str, &str)>,
         positions: &'a Vec<(f64, f64)>,
     ) -> PeerLine<'a> {
-        let (typ, label) = label::parse_tags(tags);
         return PeerLine {
-            id: id,
-            positions: positions,
-            typ: typ,
-            label: label,
+            id,
+            positions,
+            tags,
         };
     }
 }
 
 impl<'a> ToBytesLE for PeerLine<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
+        let (typ, label) = label::parse_tags(self.tags)?;
         let pcount = self.positions.len();
-        let typ_length = varint::length(self.typ);
+        let typ_length = varint::length(typ);
         let id_length = varint::length(self.id);
         let pcount_length = varint::length(pcount as u64);
 
         let mut buf =
-            vec![
-                0u8;
-                1 + typ_length + id_length + pcount_length + (2 * 4 * pcount) + self.label.len()
-            ];
+            vec![0u8; 1 + typ_length + id_length + pcount_length + (2 * 4 * pcount) + label.len()];
         let mut offset = 0;
         buf[offset] = 0x02;
         offset += 1;
 
-        offset += varint::encode_with_offset(self.typ, &mut buf, offset)?;
+        offset += varint::encode_with_offset(typ, &mut buf, offset)?;
 
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
 
@@ -72,7 +67,7 @@ impl<'a> ToBytesLE for PeerLine<'a> {
             offset += point::encode_with_offset(*lat, &mut buf, offset)?;
         }
 
-        label::encode_with_offset(&self.label, &mut buf, offset);
+        label::encode_with_offset(&label, &mut buf, offset);
         return Ok(buf);
     }
 }

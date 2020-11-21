@@ -31,8 +31,7 @@ fn peer_area() {
 pub struct PeerArea<'a> {
     pub id: u64,
     pub positions: &'a Vec<(f64, f64)>,
-    pub typ: u64,
-    pub label: Vec<u8>,
+    pub tags: &'a Vec<(&'a str, &'a str)>,
 }
 
 impl<'a> PeerArea<'a> {
@@ -41,12 +40,10 @@ impl<'a> PeerArea<'a> {
         tags: &'a Vec<(&str, &str)>,
         positions: &'a Vec<(f64, f64)>,
     ) -> PeerArea<'a> {
-        let (typ, label) = label::parse_tags(tags);
         return PeerArea {
-            id: id,
-            positions: positions,
-            typ: typ,
-            label: label,
+            id,
+            positions,
+            tags,
         };
     }
 }
@@ -67,8 +64,9 @@ fn earcut(positions: &Vec<(f64, f64)>) -> Vec<usize> {
 
 impl<'a> ToBytesLE for PeerArea<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
+        let (typ, label) = label::parse_tags(&self.tags)?;
         let pcount = self.positions.len();
-        let typ_length = varint::length(self.typ);
+        let typ_length = varint::length(typ);
         let id_length = varint::length(self.id);
         let pcount_length = varint::length(pcount as u64);
 
@@ -86,14 +84,14 @@ impl<'a> ToBytesLE for PeerArea<'a> {
                 + (2 * 4 * pcount)
                 + clen
                 + clen_data
-                + self.label.len()
+                + label.len()
         ];
 
         let mut offset = 0;
         buf[offset] = 0x03;
 
         offset += 1;
-        offset += varint::encode_with_offset(self.typ, &mut buf, offset)?;
+        offset += varint::encode_with_offset(typ, &mut buf, offset)?;
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
         offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
@@ -110,7 +108,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
             offset += varint::encode_with_offset(cell as u64, &mut buf, offset)?;
         }
 
-        label::encode_with_offset(&self.label, &mut buf, offset);
+        label::encode_with_offset(&label, &mut buf, offset);
         return Ok(buf);
     }
 }

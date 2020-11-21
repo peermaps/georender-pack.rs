@@ -1,13 +1,14 @@
 use crate::{PeerArea, PeerLine, PeerNode};
 use desert::ToBytesLE;
+use failure::Error;
 use osm_is_area;
 use std::collections::HashMap;
 
 // Some convenience functions
 
-pub fn node(id: u64, lon: f64, lat: f64, tags: Vec<(&str, &str)>) -> Vec<u8> {
+pub fn node(id: u64, lon: f64, lat: f64, tags: Vec<(&str, &str)>) -> Result<Vec<u8>, Error> {
     let node = PeerNode::new(id, lon, lat, &tags);
-    return node.to_bytes_le().unwrap();
+    return node.to_bytes_le();
 }
 
 pub fn way(
@@ -15,24 +16,25 @@ pub fn way(
     tags: Vec<(&str, &str)>,
     refs: Vec<i64>,
     deps: &HashMap<i64, (f64, f64)>,
-) -> Vec<u8> {
+) -> Result<Vec<u8>, Error> {
     let len = refs.len();
     if osm_is_area::way(&tags, &refs) {
-        let positions = get_positions(&refs, &deps);
+        let positions = get_positions(&refs, &deps)?;
         let area = PeerArea::new(id, &tags, &positions);
-        let buf = area.to_bytes_le().unwrap();
-        return buf;
+        return area.to_bytes_le();
     } else if len > 1 {
-        let positions = get_positions(&refs, &deps);
+        let positions = get_positions(&refs, &deps)?;
         let line = PeerLine::new(id, &tags, &positions);
-        let buf = line.to_bytes_le().unwrap();
-        return buf;
+        return line.to_bytes_le();
     } else {
-        return vec![];
+        return Ok(vec![]);
     }
 }
 
-fn get_positions(refs: &Vec<i64>, deps: &HashMap<i64, (f64, f64)>) -> Vec<(f64, f64)> {
+fn get_positions(
+    refs: &Vec<i64>,
+    deps: &HashMap<i64, (f64, f64)>,
+) -> Result<Vec<(f64, f64)>, Error> {
     let mut positions = Vec::new();
     // positions
     for r in refs {
@@ -44,8 +46,8 @@ fn get_positions(refs: &Vec<i64>, deps: &HashMap<i64, (f64, f64)>) -> Vec<(f64, 
                 lat = dep.1;
                 positions.push((lon, lat));
             }
-            None => println!("Could not find dep for {}", &r),
+            None => bail!("Could not find dep for {}", &r),
         }
     }
-    return positions;
+    return Ok(positions);
 }

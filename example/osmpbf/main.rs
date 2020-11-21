@@ -1,28 +1,9 @@
 use georender::encode;
 use hex;
-use osmpbf::{DenseNode, Element, ElementReader, Node, Way};
+use osmpbf::{Element, ElementReader};
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
-
-fn from_node(node: Node) -> Vec<u8> {
-    let tags = node.tags();
-
-    let buf = encode::node(node.id() as u64, node.lon(), node.lat(), tags);
-    return buf;
-}
-
-fn from_dense_node(node: DenseNode) -> Vec<u8> {
-    let tags = node.tags();
-    let buf = encode::node(node.id as u64, node.lon(), node.lat(), tags);
-    return buf;
-}
-
-fn from_way(way: Way, deps: &HashMap<i64, (&f64, &f64)>) -> Vec<u8> {
-    let tags = way.tags();
-    let refs = way.refs();
-    return encode::way(way.id() as u64, tags, refs, &deps);
-}
 
 fn main() {
     run();
@@ -38,9 +19,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     reader
         .for_each(|item| {
             match item {
-                Element::DenseNode(dense) => {
-                    nodes.insert(dense.id, (dense.lon(), dense.lat()));
-                    let encoded = from_dense_node(dense);
+                Element::DenseNode(node) => {
+                    nodes.insert(node.id, (node.lon(), node.lat()));
+                    let tags = node.tags().into_iter().collect();
+                    let encoded =
+                        encode::node(node.id as u64, node.lon(), node.lat(), tags).unwrap();
                     println!("{}", hex::encode(encoded));
                 }
                 Element::Relation(_rel) => {
@@ -48,7 +31,9 @@ fn run() -> Result<(), Box<dyn Error>> {
                 }
                 Element::Node(node) => {
                     nodes.insert(node.id(), (node.lon(), node.lat()));
-                    let encoded = from_node(node);
+                    let tags = node.tags().into_iter().collect();
+                    let encoded =
+                        encode::node(node.id() as u64, node.lon(), node.lat(), tags).unwrap();
                     println!("{}", hex::encode(encoded));
                 }
                 Element::Way(way) => {
@@ -56,7 +41,9 @@ fn run() -> Result<(), Box<dyn Error>> {
                         let ref item = nodes[&r];
                         deps.entry(r).or_insert(*item);
                     }
-                    let encoded = from_way(way, &deps);
+                    let tags = way.tags().into_iter().collect();
+                    let refs = way.refs().into_iter().collect();
+                    let encoded = encode::way(way.id() as u64, tags, refs, &deps).unwrap();
                     println!("{}", hex::encode(encoded));
                 }
             }
