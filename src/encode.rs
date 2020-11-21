@@ -40,8 +40,8 @@ fn get_positions(refs: &Vec<i64>, deps: &HashMap<i64, (f64, f64)>) -> Vec<(f32, 
     let mut positions = Vec::new();
     // positions
     for r in refs {
-        let lat;
         let lon;
+        let lat;
         match deps.get(r) {
             Some(dep) => {
                 lon = dep.0;

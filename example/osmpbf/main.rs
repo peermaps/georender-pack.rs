@@ -14,7 +14,7 @@ fn from_node(node: Node) -> Vec<u8> {
 
 fn from_dense_node(node: DenseNode) -> Vec<u8> {
     let tags = node.tags().into_iter().collect();
-    let buf = encode::node(node.id as u64, tags, node.lat(), node.lon());
+    let buf = encode::node(node.id as u64, tags, node.lon(), node.lat());
     return buf;
 }
 
@@ -40,7 +40,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         .for_each(|item| {
             match item {
                 Element::DenseNode(dense) => {
-                    nodes.insert(dense.id, (dense.lat(), dense.lon()));
+                    nodes.insert(dense.id, (dense.lon(), dense.lat()));
                     let encoded = from_dense_node(dense);
                     println!("{}", hex::encode(encoded));
                 }
@@ -48,7 +48,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                     // do nothing
                 }
                 Element::Node(node) => {
-                    nodes.insert(node.id(), (node.lat(), node.lon()));
+                    nodes.insert(node.id(), (node.lon(), node.lat()));
                     let encoded = from_node(node);
                     println!("{}", hex::encode(encoded));
                 }
