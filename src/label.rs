@@ -44,7 +44,7 @@ pub fn get_label_length(tags: &Vec<(&str, &str)>) -> usize {
 pub fn parse_tags(tags: &Vec<(&str, &str)>) -> (u64, Vec<u8>) {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
-        static ref ALL_TYPES: HashMap<String, u64> = osm_types::get_types();
+        static ref ALL_TYPES: HashMap<&'static str, u64> = osm_types::get_types();
     }
 
     let mut label = vec![0u8; get_label_length(tags)];
@@ -53,9 +53,9 @@ pub fn parse_tags(tags: &Vec<(&str, &str)>) -> (u64, Vec<u8>) {
     let mut offset = 0;
 
     for tag in tags {
-        let string = format!("{}.{}", tag.0, tag.1);
-        if ALL_TYPES.contains_key(&string) {
-            t = ALL_TYPES.get(&string);
+        let string: &str = &format!("{}.{}", tag.0, tag.1);
+        if ALL_TYPES.contains_key(string) {
+            t = ALL_TYPES.get(string);
         }
         // skip all tags that aren't the name tag
         let is_name_tag = RE.find(tag.0);
