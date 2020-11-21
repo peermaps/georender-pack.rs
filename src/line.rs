@@ -17,7 +17,10 @@ fn peer_line() {
     let line = PeerLine::new(id, &tags, &positions);
 
     let bytes = line.to_bytes_le().unwrap();
-    println!("{}", hex::encode(bytes));
+    assert_eq!(
+        "02c801b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef4100",
+        hex::encode(bytes)
+    );
 }
 
 #[derive(Debug)]
@@ -52,9 +55,7 @@ impl<'a> ToBytesLE for PeerLine<'a> {
 
         let mut buf = vec![0u8; 1 + typ_length + id_length + pcount_length];
         let mut offset = 0;
-
         buf[offset] = 0x02;
-
         offset += 1;
 
         offset += varint::encode_with_offset(typ, &mut buf, offset)?;
