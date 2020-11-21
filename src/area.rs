@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{parse_tags, Tags};
+use crate::{parse_tags, point, Tags};
 use desert::ToBytesLE;
 use earcutr;
 use failure::Error;
@@ -51,8 +51,15 @@ impl<'a> ToBytesLE for PeerArea<'a> {
 
         let cells = earcut(&self.positions);
         let clen = varint::length((cells.len() / 3) as u64);
+        let clen_data = cells
+            .iter()
+            .fold(0, |acc, c| acc + varint::length(*c as u64));
 
-        let mut buf = vec![0u8; 1 + typ_length + id_length + pcount_length + clen + cells.len()];
+        let mut buf =
+            vec![
+                0u8;
+                1 + typ_length + id_length + pcount_length + (2 * 4 * pcount) + clen + clen_data
+            ];
 
         let mut offset = 0;
         buf[offset] = 0x03;
@@ -62,23 +69,17 @@ impl<'a> ToBytesLE for PeerArea<'a> {
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
         offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
-        println!("{} / {}", offset, buf.len());
         // positions
         for (lon, lat) in self.positions {
-            buf.extend((*lon as f32).to_bytes_le()?);
-            buf.extend((*lat as f32).to_bytes_le()?);
-            offset += 8;
-            println!("{} / {}", offset, buf.len());
+            offset += point::encode_with_offset(*lon, &mut buf, offset)?;
+            offset += point::encode_with_offset(*lat, &mut buf, offset)?;
         }
 
         offset += varint::encode_with_offset(cells.len() as u64, &mut buf, offset)?;
-        println!("{} / {}", offset, buf.len());
 
         // cells
         for &cell in cells.iter() {
-            println!("{}", cell);
             offset += varint::encode_with_offset(cell as u64, &mut buf, offset)?;
-            println!("{} / {}", offset, buf.len());
         }
 
         buf.extend(labels);

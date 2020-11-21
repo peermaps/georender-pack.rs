@@ -17,3 +17,6 @@ pub use line::*;
 
 mod area;
 pub use area::*;
+
+mod point;
+pub use point::*;

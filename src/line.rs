@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{parse_tags, Tags};
+use crate::{parse_tags, point, Tags};
 use desert::ToBytesLE;
 use failure::Error;
 use hex;
@@ -48,12 +48,12 @@ impl<'a> PeerLine<'a> {
 impl<'a> ToBytesLE for PeerLine<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let (typ, labels) = parse_tags(&self.tags)?;
-        let pcount = self.positions.len() as u64;
+        let pcount = self.positions.len();
         let typ_length = varint::length(typ);
         let id_length = varint::length(self.id);
-        let pcount_length = varint::length(pcount);
+        let pcount_length = varint::length(pcount as u64);
 
-        let mut buf = vec![0u8; 1 + typ_length + id_length + pcount_length];
+        let mut buf = vec![0u8; 1 + typ_length + id_length + pcount_length + (2 * 4 * pcount)];
         let mut offset = 0;
         buf[offset] = 0x02;
         offset += 1;
@@ -62,11 +62,11 @@ impl<'a> ToBytesLE for PeerLine<'a> {
 
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
 
-        varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
+        offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
         for (lon, lat) in self.positions {
-            buf.extend((*lon as f32).to_bytes_le()?);
-            buf.extend((*lat as f32).to_bytes_le()?);
+            offset += point::encode_with_offset(*lon, &mut buf, offset)?;
+            offset += point::encode_with_offset(*lat, &mut buf, offset)?;
         }
 
         buf.extend(labels);

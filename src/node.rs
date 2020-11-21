@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{parse_tags, Tags};
+use crate::{parse_tags, point, Tags};
 use desert::ToBytesLE;
 use failure::Error;
 use std::rc::Rc;
@@ -41,15 +41,15 @@ impl<'a> ToBytesLE for PeerNode<'a> {
         let (typ, label) = parse_tags(&self.tags)?;
         let typ_length = varint::length(typ);
         let id_length = varint::length(self.id);
-        let mut buf = vec![0u8; 1 + typ_length + id_length];
+        let mut buf = vec![0u8; 1 + typ_length + id_length + 2 * 4];
         buf[0] = 0x01;
 
         let mut offset = 1;
         offset += varint::encode_with_offset(typ, &mut buf, offset)?;
-        varint::encode_with_offset(self.id, &mut buf, offset)?;
+        offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
 
-        buf.extend((self.lon as f32).to_bytes_le()?);
-        buf.extend((self.lat as f32).to_bytes_le()?);
+        offset += point::encode_with_offset(self.lon, &mut buf, offset)?;
+        offset += point::encode_with_offset(self.lat, &mut buf, offset)?;
         buf.extend(label);
 
         return Ok(buf);
