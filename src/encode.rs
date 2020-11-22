@@ -50,7 +50,7 @@ fn get_positions(
     refs: &Vec<i64>,
     deps: &HashMap<i64, (f64, f64)>,
 ) -> Result<Vec<(f64, f64)>, Error> {
-    let mut positions = Vec::new();
+    let mut positions = Vec::with_capacity(deps.keys().len() * 2);
     // positions
     for r in refs {
         let lon;
