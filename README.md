@@ -66,7 +66,7 @@ cargo run --example osmpbf /path/to/my.pbf
 ## Development
 
 ```
-git submodule init --update
+git submodule update --init
 cargo test
 ```
 
