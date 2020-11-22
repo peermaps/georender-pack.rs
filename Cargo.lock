@@ -129,7 +129,6 @@ dependencies = [
 [[package]]
 name = "earcutr"
 version = "0.1.0"
-source = "git+https://github.com/donbright/earcutr.git#aaa18bfdfe581db26bb9869aec170329b4e14f4c"
 
 [[package]]
 name = "either"

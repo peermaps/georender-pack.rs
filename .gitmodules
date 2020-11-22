@@ -1,0 +1,3 @@
+[submodule "lib/earcutr"]
+	path = lib/earcutr
+	url = https://github.com/donbright/earcutr.git

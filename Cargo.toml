@@ -22,7 +22,7 @@ hex = "0.4.2"
 earcutr = "0.1.0"
 
 [patch.crates-io]
-earcutr = { git = "https://github.com/donbright/earcutr.git", branch = "master" } 
+earcutr = { path = "./lib/earcutr" }
 
 [[example]]
 name = "osmpbf"
