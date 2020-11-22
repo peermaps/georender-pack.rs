@@ -19,10 +19,7 @@ lazy_static = "1.4.0"
 failure = "0.1.8"
 osm-is-area = "0.1.3"
 hex = "0.4.2"
-earcutr = "0.1.0"
-
-[patch.crates-io]
-earcutr = { path = "./lib/earcutr" }
+earcutr = { path = "lib/earcutr", version = "0.1.0" }
 
 [[example]]
 name = "osmpbf"
