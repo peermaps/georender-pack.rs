@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{label, point, tags};
+use crate::{element, label, point, tags};
 use desert::ToBytesLE;
 use earcutr;
 use failure::Error;
@@ -33,6 +33,8 @@ pub struct PeerArea<'a> {
     pub positions: &'a Vec<(f64, f64)>,
     pub tags: &'a Vec<(&'a str, &'a str)>,
 }
+
+impl<'a> element::Element for PeerArea<'a> {}
 
 impl<'a> PeerArea<'a> {
     pub fn new(
@@ -97,8 +99,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
 
         // positions
         for (lon, lat) in self.positions {
-            offset += point::encode_with_offset(*lon, &mut buf, offset)?;
-            offset += point::encode_with_offset(*lat, &mut buf, offset)?;
+            offset += self.encode_point((lon, lat), &mut buf, offset)?;
         }
 
         offset += varint::encode_with_offset(cells.len() as u64, &mut buf, offset)?;
@@ -108,7 +109,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
             offset += varint::encode_with_offset(cell as u64, &mut buf, offset)?;
         }
 
-        label::encode_with_offset(&label, &mut buf, offset);
+        self.encode_label(&label, &mut buf, offset)?;
         return Ok(buf);
     }
 }

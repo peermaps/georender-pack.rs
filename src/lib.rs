@@ -6,6 +6,7 @@ extern crate failure;
 
 pub mod varint;
 
+pub mod element;
 pub mod encode;
 pub mod label;
 pub mod osm_types;
