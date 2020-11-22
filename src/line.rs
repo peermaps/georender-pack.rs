@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{label, point};
+use crate::{label, point, tags};
 use desert::ToBytesLE;
 use failure::Error;
 
@@ -44,7 +44,7 @@ impl<'a> PeerLine<'a> {
 
 impl<'a> ToBytesLE for PeerLine<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-        let (typ, label) = label::parse_tags(self.tags)?;
+        let (typ, label) = tags::parse(self.tags)?;
         let pcount = self.positions.len();
         let typ_length = varint::length(typ);
         let id_length = varint::length(self.id);

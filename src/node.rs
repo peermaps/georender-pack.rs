@@ -1,14 +1,15 @@
 use crate::varint;
-use crate::{label, point};
+use crate::{label, point, tags};
 use desert::ToBytesLE;
 use failure::Error;
 
 #[test]
 fn peer_node() {
-    let tags = vec![("name", "Neu Broderstorf"), ("traffic_sign", "city_limit")];
+    let id = 1831881213;
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
-    let node = PeerNode::new(1831881213, (lon, lat), &tags);
+    let tags = vec![("name", "Neu Broderstorf"), ("traffic_sign", "city_limit")];
+    let node = PeerNode::new(id, (lon, lat), &tags);
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
@@ -32,7 +33,7 @@ impl<'a> PeerNode<'a> {
 
 impl<'a> ToBytesLE for PeerNode<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-        let (typ, label) = label::parse_tags(&self.tags)?;
+        let (typ, label) = tags::parse(&self.tags)?;
         let typ_length = varint::length(typ);
         let id_length = varint::length(self.id);
         let mut buf = vec![0u8; 1 + typ_length + id_length + 2 * 4 + label.len()];

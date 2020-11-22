@@ -1,5 +1,5 @@
 use crate::varint;
-use crate::{label, point};
+use crate::{label, point, tags};
 use desert::ToBytesLE;
 use earcutr;
 use failure::Error;
@@ -64,7 +64,7 @@ fn earcut(positions: &Vec<(f64, f64)>) -> Vec<usize> {
 
 impl<'a> ToBytesLE for PeerArea<'a> {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-        let (typ, label) = label::parse_tags(&self.tags)?;
+        let (typ, label) = tags::parse(&self.tags)?;
         let pcount = self.positions.len();
         let typ_length = varint::length(typ);
         let id_length = varint::length(self.id);
