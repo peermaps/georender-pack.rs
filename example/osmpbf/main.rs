@@ -1,4 +1,4 @@
-use georender::encode;
+use georender_pack::encode;
 use hex;
 use osmpbf::{Element, ElementReader};
 use std::collections::HashMap;

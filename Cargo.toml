@@ -1,14 +1,18 @@
 [package]
-name = "georender"
-version = "0.1.0"
-authors = ["okdistribute <633012+okdistribute@users.noreply.github.com>"]
+name = "georender-pack"
+description = "Pack osm data into a buffer based on the peermaps buffer schema"
+version = "1.0.0"
+authors = ["Karissa McKelvey <karissa.mckelvey@gmail.com>"]
 edition = "2018"
+readme = "README.md"
+repository = "https://github.com/peermaps/georender-pack.rs"
+documentation = "https://docs.rs/georender-pack"
+license = "MIT OR Apache-2.0"
 
 [dev-dependencies]
 osmpbf = "0.1"
 
 [dependencies]
-kv = "0.20.2"
 desert = "1.0.3"
 regex = "1"
 lazy_static = "1.4.0"
