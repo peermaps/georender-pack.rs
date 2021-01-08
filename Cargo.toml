@@ -1,5 +1,5 @@
 [package]
-name = "georender-pack"
+name = "georender_pack"
 description = "Pack osm data into a buffer based on the peermaps buffer schema"
 version = "1.0.0"
 authors = ["Karissa McKelvey <karissa.mckelvey@gmail.com>"]
@@ -19,10 +19,6 @@ lazy_static = "1.4.0"
 failure = "0.1.8"
 osm-is-area = "0.1.3"
 hex = "0.4.2"
-earcutr = "0.1.0"
-
-[patch.crates-io]
-earcutr = { path = "./lib/earcutr" }
 
 [[example]]
 name = "osmpbf"
