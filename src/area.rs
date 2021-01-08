@@ -1,7 +1,7 @@
+use crate::earcutr;
 use crate::varint;
 use crate::{label, point, tags};
 use desert::ToBytesLE;
-use earcutr;
 use failure::Error;
 
 #[test]

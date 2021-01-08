@@ -22,3 +22,5 @@ pub use area::*;
 
 mod point;
 pub use point::*;
+
+mod earcutr;
