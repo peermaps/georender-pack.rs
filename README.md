@@ -66,12 +66,11 @@ cargo run --example osmpbf /path/to/my.pbf
 ## Development
 
 ```
-git submodule update --init
 cargo test
 ```
 
 There is a limited test suite on creating and encoding new PeerLine, PeerNode,
-and PeerArea objects. It still needs benchmarks for larger osm objects.
+and PeerArea objects. 
 
 ## License
 
