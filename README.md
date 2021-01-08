@@ -10,7 +10,7 @@ If you want to decode these buffers, use the [Node.js version of this library](h
 
 ### `encode::node`
 
-```rs
+```rust
 encode::node(
     id: u64, 
     point: (f64, f64), 
@@ -18,7 +18,7 @@ encode::node(
 ) -> Result<Vec<u8>, Error> 
 ```
 
-```rs
+```rust
 use georender_pack::encode;
 
 let id = 1831881213;
@@ -32,7 +32,7 @@ let bytes = encode::node(id (lon, lat), &tags).unwrap();
 
 ### `encode::way`
 
-```rs
+```rust
 encode::way(
     id: u64, 
     tags: Vec<(&str, &str)>,
@@ -41,7 +41,7 @@ encode::way(
 ) -> Result<Vec<u8>, Error> 
 ```
 
-```rs
+```rust
 use georender_pack::encode;
 
 let tags = vec![("source", "bing"), ("highway", "residential")];
