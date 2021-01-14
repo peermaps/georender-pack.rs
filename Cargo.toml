@@ -3,9 +3,11 @@ name = "georender-pack"
 description = "Pack osm data into a buffer based on the peermaps buffer schema"
 version = "1.0.0"
 authors = ["Karissa McKelvey <karissa.mckelvey@gmail.com>"]
+keywords = ["osm", "open street map", "peermaps", "p2p", "decentralized", "maps"]
 edition = "2018"
 readme = "README.md"
 repository = "https://github.com/peermaps/georender-pack.rs"
+homepage = "https://github.com/peermaps/georender-pack.rs"
 documentation = "https://docs.rs/georender-pack"
 license = "MIT OR Apache-2.0"
 
