@@ -6,6 +6,14 @@ schema](https://github.com/peermaps/docs/blob/master/bufferschema.md). This is p
 If you want to decode these buffers, use the [Node.js version of this library](https://github.com/peermaps/georender-pack) or open a pull request here! :tada:
 
 
+## Installation
+
+In `Cargo.toml`
+
+```
+georender-pack = "x.x.x" # latest version
+```
+
 ## Usage
 
 ### `encode::node`

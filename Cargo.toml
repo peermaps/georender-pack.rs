@@ -9,6 +9,7 @@ repository = "https://github.com/peermaps/georender-pack.rs"
 documentation = "https://docs.rs/georender-pack"
 license = "MIT OR Apache-2.0"
 
+
 [dev-dependencies]
 osmpbf = "0.1"
 
