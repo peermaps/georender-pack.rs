@@ -49,6 +49,17 @@ encode::way(
 ) -> Result<Vec<u8>, Error> 
 ```
 
+### `encode::relation`
+
+```rust
+encode::relation(
+    id: u64, 
+    tags: Vec<(&str, &str)>,
+    members: Vec<i64>,
+    deps: &HashMap<i64, (f64, f64)>
+) -> Result<Vec<u8>, Error> 
+```
+
 ```rust
 use georender_pack::encode;
 

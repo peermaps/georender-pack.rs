@@ -5,6 +5,7 @@ use osm_is_area;
 use std::collections::HashMap;
 
 // Some convenience functions
+//
 
 pub fn node(id: u64, point: (f64, f64), tags: Vec<(&str, &str)>) -> Result<Vec<u8>, Error> {
     let node = PeerNode::new(id, point, &tags);
@@ -41,6 +42,21 @@ pub fn way(
         let positions = get_positions(&refs, &deps)?;
         let line = PeerLine::new(id, &tags, &positions);
         return line.to_bytes_le();
+    } else {
+        return Ok(vec![]);
+    }
+}
+
+pub fn relation(
+    id: u64,
+    tags: Vec<(&str, &str)>,
+    members: Vec<i64>,
+    deps: &HashMap<i64, (f64, f64)>,
+) -> Result<Vec<u8>, Error> {
+    if osm_is_area::way(&tags, &members) {
+        let positions = get_positions(&members, &deps)?;
+        let area = PeerArea::new(id, &tags, &positions);
+        return area.to_bytes_le();
     } else {
         return Ok(vec![]);
     }
