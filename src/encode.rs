@@ -1,12 +1,10 @@
-use crate::{PeerArea, PeerLine, PeerNode};
+use crate::{PeerArea, PeerLine, PeerNode, Member, MemberRole};
 use desert::ToBytesLE;
 use failure::Error;
 use osm_is_area;
 use std::collections::HashMap;
 
-// Some convenience functions
-
-pub fn node(id: u64, point: (f64, f64), tags: Vec<(&str, &str)>) -> Result<Vec<u8>, Error> {
+pub fn node(id: u64, point: (f64, f64), tags: &Vec<(&str, &str)>) -> Result<Vec<u8>, Error> {
     let node = PeerNode::new(id, point, &tags);
     return node.to_bytes_le();
 }
@@ -28,8 +26,8 @@ fn encode_way_line() {
 
 pub fn way(
     id: u64,
-    tags: Vec<(&str, &str)>,
-    refs: Vec<i64>,
+    tags: &Vec<(&str, &str)>,
+    refs: &Vec<i64>,
     deps: &HashMap<i64, (f64, f64)>,
 ) -> Result<Vec<u8>, Error> {
     let len = refs.len();
@@ -41,6 +39,32 @@ pub fn way(
         let positions = get_positions(&refs, &deps)?;
         let line = PeerLine::new(id, &tags, &positions);
         return line.to_bytes_le();
+    } else {
+        return Ok(vec![]);
+    }
+}
+
+pub fn relation(
+    id: u64,
+    tags: &Vec<(&str, &str)>,
+    members: &Vec<Member>,
+    nodes: &HashMap<i64, (f64, f64)>,
+    ways: &HashMap<i64, Vec<i64>>,
+) -> Result<Vec<u8>, Error> {
+    // osm_is_area only checks members.is_empty():
+    if !members.is_empty() && osm_is_area::relation(&tags, &vec![0]) {
+        let mut mmembers: Vec<Member> = members.to_vec();
+        Member::drop(&mut mmembers);
+        Member::sort(&mut mmembers);
+        let mut positions = vec![];
+        for m in mmembers.iter() {
+            match ways.get(&(m.id as i64)) {
+                None => bail!["way member {} not given", m.id],
+                Some(refs) => positions.extend(get_positions(&refs, &nodes)?)
+            }
+        }
+        let area = PeerArea::new(id, &tags, &positions);
+        return area.to_bytes_le();
     } else {
         return Ok(vec![]);
     }
