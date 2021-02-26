@@ -101,7 +101,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
             offset += point::encode_with_offset(*lat, &mut buf, offset)?;
         }
 
-        offset += varint::encode_with_offset(cells.len() as u64, &mut buf, offset)?;
+        offset += varint::encode_with_offset((cells.len()/3) as u64, &mut buf, offset)?;
 
         // cells
         for &cell in cells.iter() {
