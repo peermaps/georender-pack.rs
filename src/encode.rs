@@ -72,18 +72,19 @@ pub fn relation(
 
 fn get_positions(
     refs: &Vec<i64>,
-    deps: &HashMap<i64, (f64, f64)>,
+    nodes: &HashMap<i64, (f64, f64)>,
     reverse: bool,
-) -> Result<Vec<(f64, f64)>, Error> {
-    let mut positions = Vec::with_capacity(deps.keys().len() * 2);
+) -> Result<Vec<f64>, Error> {
+    let mut positions = Vec::with_capacity(nodes.len() * 2);
     let irefs = (0..refs.len()).map(|i| refs[match reverse {
         true => refs.len()-i-1,
         false => i,
     }]);
     for r in irefs {
-        match deps.get(&r) {
-            Some(point) => {
-                positions.push(point.clone());
+        match nodes.get(&r) {
+            Some((lon,lat)) => {
+                positions.push(*lon);
+                positions.push(*lat);
             },
             None => bail!("Could not find dep for {}", &r),
         }

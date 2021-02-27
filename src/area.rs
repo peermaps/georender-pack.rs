@@ -30,7 +30,7 @@ fn peer_area() {
 #[derive(Debug)]
 pub struct PeerArea<'a> {
     pub id: u64,
-    pub positions: &'a Vec<(f64, f64)>,
+    pub positions: &'a Vec<f64>,
     pub tags: &'a Vec<(&'a str, &'a str)>,
 }
 
@@ -38,7 +38,7 @@ impl<'a> PeerArea<'a> {
     pub fn new(
         id: u64,
         tags: &'a Vec<(&str, &str)>,
-        positions: &'a Vec<(f64, f64)>,
+        positions: &'a Vec<f64>,
     ) -> PeerArea<'a> {
         return PeerArea {
             id,
@@ -48,18 +48,8 @@ impl<'a> PeerArea<'a> {
     }
 }
 
-fn earcut(positions: &Vec<(f64, f64)>) -> Vec<usize> {
-    let mut coords: Vec<f64> = vec![0.0; positions.len() * 2];
-    let mut offset = 0;
-    while offset < positions.len() {
-        let p = positions[offset];
-        coords[offset] = p.0;
-        offset += 1;
-        coords[offset] = p.1;
-        offset += 1;
-    }
-
-    return earcutr::earcut(&coords, &vec![], 2);
+fn earcut(positions: &Vec<f64>) -> Vec<usize> {
+    return earcutr::earcut(&positions, &vec![], 2);
 }
 
 impl<'a> ToBytesLE for PeerArea<'a> {
@@ -96,9 +86,8 @@ impl<'a> ToBytesLE for PeerArea<'a> {
         offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
         // positions
-        for (lon, lat) in self.positions {
-            offset += point::encode_with_offset(*lon, &mut buf, offset)?;
-            offset += point::encode_with_offset(*lat, &mut buf, offset)?;
+        for p in self.positions.iter() {
+            offset += point::encode_with_offset(*p, &mut buf, offset)?;
         }
 
         offset += varint::encode_with_offset((cells.len()/3) as u64, &mut buf, offset)?;
