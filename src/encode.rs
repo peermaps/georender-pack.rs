@@ -1,4 +1,4 @@
-use crate::{PeerArea, PeerLine, PeerNode, Member, MemberRole};
+use crate::{PeerArea, PeerLine, PeerNode, Member};
 use desert::ToBytesLE;
 use failure::Error;
 use osm_is_area;
@@ -32,11 +32,11 @@ pub fn way(
 ) -> Result<Vec<u8>, Error> {
     let len = refs.len();
     if osm_is_area::way(&tags, &refs) {
-        let positions = get_positions(&refs, &deps)?;
+        let positions = get_positions(&refs, &deps, false)?;
         let area = PeerArea::new(id, &tags, &positions);
         return area.to_bytes_le();
     } else if len > 1 {
-        let positions = get_positions(&refs, &deps)?;
+        let positions = get_positions(&refs, &deps, false)?;
         let line = PeerLine::new(id, &tags, &positions);
         return line.to_bytes_le();
     } else {
@@ -54,13 +54,13 @@ pub fn relation(
     // osm_is_area only checks members.is_empty():
     if !members.is_empty() && osm_is_area::relation(&tags, &vec![0]) {
         let mut mmembers: Vec<Member> = members.to_vec();
-        Member::drop(&mut mmembers);
-        Member::sort(&mut mmembers);
+        Member::drain(&mut mmembers, ways);
+        mmembers = Member::sort(&mmembers, ways);
         let mut positions = vec![];
         for m in mmembers.iter() {
             match ways.get(&(m.id as i64)) {
                 None => bail!["way member {} not given", m.id],
-                Some(refs) => positions.extend(get_positions(&refs, &nodes)?)
+                Some(refs) => positions.extend(get_positions(&refs, &nodes, m.reverse)?)
             }
         }
         let area = PeerArea::new(id, &tags, &positions);
@@ -73,18 +73,18 @@ pub fn relation(
 fn get_positions(
     refs: &Vec<i64>,
     deps: &HashMap<i64, (f64, f64)>,
+    reverse: bool,
 ) -> Result<Vec<(f64, f64)>, Error> {
     let mut positions = Vec::with_capacity(deps.keys().len() * 2);
-    // positions
-    for r in refs {
-        let lon;
-        let lat;
-        match deps.get(r) {
-            Some(dep) => {
-                lon = dep.0;
-                lat = dep.1;
-                positions.push((lon, lat));
-            }
+    let irefs = (0..refs.len()).map(|i| refs[match reverse {
+        true => refs.len()-i-1,
+        false => i,
+    }]);
+    for r in irefs {
+        match deps.get(&r) {
+            Some(point) => {
+                positions.push(point.clone());
+            },
             None => bail!("Could not find dep for {}", &r),
         }
     }

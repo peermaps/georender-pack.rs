@@ -5,11 +5,7 @@ use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 
-fn main() {
-    run();
-}
-
-fn run() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     let reader = ElementReader::from_path(&args[1]).unwrap();
 
