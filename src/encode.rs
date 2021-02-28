@@ -1,4 +1,4 @@
-use crate::{PeerArea, PeerLine, PeerNode, Member};
+use crate::{PeerArea, PeerLine, PeerNode, Member, MemberRole};
 use desert::ToBytesLE;
 use failure::Error;
 use osm_is_area;
@@ -17,7 +17,7 @@ fn encode_way_line() {
     deps.insert(1, (31.184799400000003, 29.897739500000004));
     deps.insert(5, (31.184888100000002, 29.898801400000004));
     deps.insert(3, (31.184858400000003, 29.8983899));
-    let bytes = way(234941233, tags, refs, &deps).unwrap();
+    let bytes = way(234941233, &tags, &refs, &deps).unwrap();
     assert_eq!(
         "02c801b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef4100",
         hex::encode(bytes)
@@ -32,11 +32,12 @@ pub fn way(
 ) -> Result<Vec<u8>, Error> {
     let len = refs.len();
     if osm_is_area::way(&tags, &refs) {
-        let positions = get_positions(&refs, &deps, false)?;
-        let area = PeerArea::new(id, &tags, &positions);
+        let (_,positions) = get_positions(&refs, &deps, false, -1)?;
+        let mut area = PeerArea::new(id, &tags);
+        area.push(&positions, &vec![]);
         return area.to_bytes_le();
     } else if len > 1 {
-        let positions = get_positions(&refs, &deps, false)?;
+        let (_,positions) = get_positions(&refs, &deps, false, -1)?;
         let line = PeerLine::new(id, &tags, &positions);
         return line.to_bytes_le();
     } else {
@@ -52,35 +53,78 @@ pub fn relation(
     ways: &HashMap<i64, Vec<i64>>,
 ) -> Result<Vec<u8>, Error> {
     // osm_is_area only checks members.is_empty():
-    if !members.is_empty() && osm_is_area::relation(&tags, &vec![0]) {
-        let mut mmembers: Vec<Member> = members.to_vec();
-        Member::drain(&mut mmembers, ways);
-        mmembers = Member::sort(&mmembers, ways);
-        let mut positions = vec![];
-        for m in mmembers.iter() {
-            match ways.get(&(m.id as i64)) {
-                None => bail!["way member {} not given", m.id],
-                Some(refs) => positions.extend(get_positions(&refs, &nodes, m.reverse)?)
-            }
-        }
-        let area = PeerArea::new(id, &tags, &positions);
-        return area.to_bytes_le();
-    } else {
+    if members.is_empty() || !osm_is_area::relation(&tags, &vec![0]) {
         return Ok(vec![]);
     }
+    let mut mmembers: Vec<Member> = members.to_vec();
+    Member::drain(&mut mmembers, ways);
+    mmembers = Member::sort(&mmembers, ways);
+
+    let mut area = PeerArea::new(id, &tags);
+    let mut positions = vec![];
+    let mut holes = vec![];
+    let mut closed = false;
+    let mut ref0 = -1;
+
+    for m in mmembers.iter() {
+        match m.role {
+            MemberRole::Outer() => {
+                if closed {
+                    area.push(&positions, &holes);
+                    positions.clear();
+                    holes.clear();
+                    ref0 = -1;
+                }
+                let refs = ways.get(&(m.id as i64)).unwrap();
+                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
+                closed = c;
+                positions.extend(pts);
+                if closed {
+                    ref0 = -1;
+                } else if ref0 < 0 {
+                    ref0 = *refs.first().unwrap();
+                }
+            },
+            MemberRole::Inner() => {
+                let refs = ways.get(&(m.id as i64)).unwrap();
+                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
+                if ref0 < 0 {
+                    ref0 = *refs.first().unwrap();
+                    holes.push(positions.len()/2);
+                }
+                if c {
+                    ref0 = -1;
+                }
+                positions.extend(pts);
+            },
+            _ => {},
+        }
+    }
+    if closed && !positions.is_empty() {
+        area.push(&positions, &holes);
+        positions.clear();
+        holes.clear();
+    }
+    return area.to_bytes_le();
 }
 
 fn get_positions(
     refs: &Vec<i64>,
     nodes: &HashMap<i64, (f64, f64)>,
     reverse: bool,
-) -> Result<Vec<f64>, Error> {
+    ref0: i64,
+) -> Result<(bool,Vec<f64>), Error> {
     let mut positions = Vec::with_capacity(nodes.len() * 2);
     let irefs = (0..refs.len()).map(|i| refs[match reverse {
         true => refs.len()-i-1,
         false => i,
     }]);
+    let mut closed = false;
     for r in irefs {
+        if r == ref0 {
+            closed = true;
+            continue;
+        }
         match nodes.get(&r) {
             Some((lon,lat)) => {
                 positions.push(*lon);
@@ -89,5 +133,5 @@ fn get_positions(
             None => bail!("Could not find dep for {}", &r),
         }
     }
-    return Ok(positions);
+    return Ok((closed,positions));
 }
