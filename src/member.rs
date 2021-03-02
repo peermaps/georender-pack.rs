@@ -95,8 +95,8 @@ impl Member {
                 let lif = lifs.get(k);
                 let fil = fils.get(k);
                 let lil = lils.get(k);
-                if fif.is_some() && !visited.contains(&fif.unwrap()) {
-                    i = *fif.unwrap();
+                if fil.is_some() && !visited.contains(&fil.unwrap()) {
+                    i = *fil.unwrap();
                     sorted.last_mut().unwrap().reverse = false;
                     reverse = false;
                     found = true;
@@ -107,14 +107,14 @@ impl Member {
                     reverse = true;
                     found = true;
                     break;
-                } else if fil.is_some() && !visited.contains(&fil.unwrap()) {
-                    i = *fil.unwrap();
+                } else if lil.is_some() && !visited.contains(&lil.unwrap()) {
+                    i = *lil.unwrap();
                     sorted.last_mut().unwrap().reverse = false;
                     reverse = true;
                     found = true;
                     break;
-                } else if lil.is_some() && !visited.contains(&lil.unwrap()) {
-                    i = *lil.unwrap();
+                } else if fif.is_some() && !visited.contains(&fif.unwrap()) {
+                    i = *fif.unwrap();
                     //sorted.last_mut().unwrap().reverse = false;
                     reverse = false;
                     found = true;
