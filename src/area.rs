@@ -22,8 +22,7 @@ fn peer_area() {
 
     let bytes = area.to_bytes_le().unwrap();
     assert_eq!(
-        // verified against js decoder:
-        "03ae01b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef410101000200",
+        "03c901b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef410101000200",
         hex::encode(bytes)
     );
 }
