@@ -81,6 +81,8 @@ pub fn relation(
                 positions.extend(pts);
                 if closed {
                     ref0 = -1;
+                } else if ref0 < 0 && m.reverse {
+                    ref0 = *refs.last().unwrap();
                 } else if ref0 < 0 {
                     ref0 = *refs.first().unwrap();
                 }
@@ -88,7 +90,10 @@ pub fn relation(
             MemberRole::Inner() => {
                 let refs = ways.get(&(m.id as i64)).unwrap();
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
-                if ref0 < 0 {
+                if ref0 < 0 && m.reverse {
+                    ref0 = *refs.last().unwrap();
+                    holes.push(positions.len()/2);
+                } else if ref0 < 0 {
                     ref0 = *refs.first().unwrap();
                     holes.push(positions.len()/2);
                 }
