@@ -1,6 +1,6 @@
 use georender_pack::{encode,Member,MemberType,MemberRole};
 use hex;
-use osmpbf::{Element, ElementReader,RelMember,RelMemberType};
+use osmpbf::{Element, ElementReader};
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn convert_member(m: &RelMember) -> Member {
+fn convert_member(m: &osmpbf::RelMember) -> Member {
     Member::new(
         m.member_id as u64,
         match m.role().unwrap() {
@@ -55,9 +55,9 @@ fn convert_member(m: &RelMember) -> Member {
             _ => MemberRole::Unused(),
         },
         match m.member_type {
-            RelMemberType::Node => MemberType::Node(),
-            RelMemberType::Way => MemberType::Way(),
-            RelMemberType::Relation => MemberType::Relation(),
+            osmpbf::RelMemberType::Node => MemberType::Node(),
+            osmpbf::RelMemberType::Way => MemberType::Way(),
+            osmpbf::RelMemberType::Relation => MemberType::Relation(),
         }
     )
 }
