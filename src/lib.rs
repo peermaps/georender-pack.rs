@@ -1,3 +1,5 @@
+#![feature(drain_filter)]
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -22,3 +24,6 @@ pub use area::*;
 
 mod point;
 pub use point::*;
+
+mod member;
+pub use member::*;

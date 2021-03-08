@@ -6,12 +6,15 @@ use std::collections::HashMap;
 
 const PLACE_OTHER: u64 = 277;
 
-pub fn get_tag_length(tag: &(&str, &str)) -> usize {
+pub fn get_tag(tag: &(&str, &str)) -> String {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
     }
     let pre = RE.replace(tag.0, "");
-    return pre.len() + 1 + tag.1.len();
+    return (pre + "=" + tag.1).to_string();
+}
+pub fn get_tag_length(tag: &(&str, &str)) -> usize {
+    get_tag(tag).len()
 }
 
 pub fn get_label_length(tags: &Vec<(&str, &str)>) -> usize {
@@ -65,15 +68,11 @@ pub fn parse(tags: &Vec<(&str, &str)>) -> Result<(u64, Vec<u8>), Error> {
                         bail!("Failed to encode tag {}.{}", tag.0, tag.1);
                     }
                 }
-
-                "=".bytes().for_each(|b| {
+                let tstr = get_tag(tag);
+                tstr.bytes().for_each(|b| {
                     label[offset] = b;
                     offset += 1;
                 });
-                tag.1.bytes().for_each(|b| {
-                    label[offset] = b;
-                    offset += 1;
-                })
             }
             None => {}
         }
