@@ -18,6 +18,7 @@ georender-pack = "x.x.x" # latest version
 
 ### `encode::node`
 
+Signature
 ```rust
 encode::node(
     id: u64, 
@@ -26,8 +27,11 @@ encode::node(
 ) -> Result<Vec<u8>, Error> 
 ```
 
+Example
+
 ```rust
 use georender_pack::encode;
+use failure::Error;
 
 let id = 1831881213;
 let lon = 12.253938100000001;
@@ -40,6 +44,8 @@ let bytes = encode::node(id (lon, lat), &tags).unwrap();
 
 ### `encode::way`
 
+Signature
+
 ```rust
 encode::way(
     id: u64, 
@@ -49,7 +55,9 @@ encode::way(
 ) -> Result<Vec<u8>, Error> 
 ```
 
+Example
 ```rust
+use failure::Error;
 use georender_pack::encode;
 
 let tags = vec![("source", "bing"), ("highway", "residential")];
@@ -59,6 +67,20 @@ deps.insert(1, (31.184799400000003, 29.897739500000004));
 deps.insert(5, (31.184888100000002, 29.898801400000004));
 deps.insert(3, (31.184858400000003, 29.8983899));
 let bytes = encode::way(234941233, tags, refs, &deps).unwrap();
+```
+
+### `encode::relation`
+
+Signature
+
+```
+encode::relation(
+    id: u64,
+    tags: &Vec<(&str, &str)>,
+    members: &Vec<Member>,
+    nodes: &HashMap<i64, (f64, f64)>,
+    ways: &HashMap<i64, Vec<i64>>
+) -> Result<Vec<u8>, Error>
 ```
 
 ## Example
