@@ -73,7 +73,7 @@ let bytes = encode::way(234941233, tags, refs, &deps).unwrap();
 
 Signature
 
-```
+```rust
 encode::relation(
     id: u64,
     tags: &Vec<(&str, &str)>,
