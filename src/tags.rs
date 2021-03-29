@@ -4,8 +4,6 @@ use failure::Error;
 use regex::Regex;
 use std::collections::HashMap;
 
-const PLACE_OTHER: u64 = 277;
-
 pub fn get_tag(tag: &(&str, &str)) -> String {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
@@ -42,6 +40,7 @@ pub fn parse(tags: &Vec<(&str, &str)>) -> Result<(u64, Vec<u8>), Error> {
         static ref ALL_TYPES: HashMap<&'static str, u64> = osm_types::get_types();
     }
 
+    let place_other: u64 = *ALL_TYPES.get("place.other").unwrap();
     let mut label = vec![0u8; get_label_length(tags)];
     let typ;
     let mut t = None;
@@ -82,7 +81,7 @@ pub fn parse(tags: &Vec<(&str, &str)>) -> Result<(u64, Vec<u8>), Error> {
 
     match t {
         Some(_) => typ = *t.unwrap(),
-        None => typ = PLACE_OTHER,
+        None => typ = place_other,
     }
 
     return Ok((typ, label));
