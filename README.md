@@ -21,10 +21,10 @@ georender-pack = "x.x.x" # latest version
 Signature
 ```rust
 encode::node(
-    id: u64, 
-    point: (f64, f64), 
+    id: u64,
+    point: (f64, f64),
     tags: Vec<(&str, &str)>
-) -> Result<Vec<u8>, Error> 
+) -> Result<Vec<u8>, Error>
 ```
 
 Example
@@ -48,11 +48,11 @@ Signature
 
 ```rust
 encode::way(
-    id: u64, 
+    id: u64,
     tags: Vec<(&str, &str)>,
-    refs: Vec<i64>,
-    deps: &HashMap<i64, (f64, f64)>
-) -> Result<Vec<u8>, Error> 
+    refs: Vec<u64>,
+    deps: &HashMap<u64, (f32, f32)>
+) -> Result<Vec<u8>, Error>
 ```
 
 Example
@@ -69,6 +69,21 @@ deps.insert(3, (31.184858400000003, 29.8983899));
 let bytes = encode::way(234941233, tags, refs, &deps).unwrap();
 ```
 
+### `encode::way_from_parsed`
+
+Signature
+
+```rust
+encode::way(
+    id: u64,
+    feature_type: u64,
+    is_area: bool,
+    labels: &[u8],
+    refs: &[u64],
+    deps: &HashMap<u64, (f32, f32)>,
+) -> Result<Vec<u8>, Error>
+```
+
 ### `encode::relation`
 
 Signature
@@ -78,8 +93,24 @@ encode::relation(
     id: u64,
     tags: &Vec<(&str, &str)>,
     members: &Vec<Member>,
-    nodes: &HashMap<i64, (f64, f64)>,
-    ways: &HashMap<i64, Vec<i64>>
+    nodes: &HashMap<u64, (f32, f32)>,
+    ways: &HashMap<u64, Vec<u64>>
+) -> Result<Vec<u8>, Error>
+```
+
+### `encode::relation_from_parsed`
+
+Signature
+
+```rust
+encode::relation_from_parsed(
+    id: u64,
+    feature_type: u64,
+    is_area: bool,
+    labels: &[u8],
+    members: &[Member],
+    nodes: &HashMap<u64, (f32, f32)>,
+    ways: &HashMap<u64, Vec<u64>>,
 ) -> Result<Vec<u8>, Error>
 ```
 
@@ -100,7 +131,7 @@ cargo test
 ```
 
 There is a limited test suite on creating and encoding new PeerLine, PeerNode,
-and PeerArea objects. 
+and PeerArea objects.
 
 ## License
 
