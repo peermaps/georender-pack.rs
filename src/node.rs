@@ -14,7 +14,7 @@ fn peer_node() -> Result<(),Error> {
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
-        "019502fd93c1e906211044413a5c5842103d4e65752042726f64657273746f726600"
+        "01c805fd93c1e906211044413a5c5842103d4e65752042726f64657273746f726600"
     );
     Ok(())
 }
