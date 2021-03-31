@@ -5,19 +5,19 @@ use earcutr;
 use failure::Error;
 
 #[test]
-fn peer_area() {
+fn peer_area() -> Result<(),Error> {
     let tags = vec![
         ("source", "bing"),
         ("boundary", "protected_area"),
         ("tiger:cfcc", "A41"),
     ];
-    let positions: Vec<f64> = vec![
+    let positions: Vec<f32> = vec![
         31.184799400000003, 29.897739500000004,
         31.184888100000002, 29.898801400000004,
         31.184858400000003, 29.8983899,
     ];
     let id: u64 = 234941233;
-    let mut area = PeerArea::new(id, &tags);
+    let mut area = PeerArea::from_tags(id, &tags)?;
     area.push(&positions, &vec![]);
 
     let bytes = area.to_bytes_le().unwrap();
@@ -25,36 +25,48 @@ fn peer_area() {
         "03c901b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef410101000200",
         hex::encode(bytes)
     );
+    Ok(())
 }
 
 #[derive(Debug)]
-pub struct PeerArea<'a> {
+pub struct PeerArea {
     pub id: u64,
-    pub tags: &'a Vec<(&'a str, &'a str)>,
-    pub positions: Vec<f64>,
+    pub feature_type: u64,
+    pub labels: Vec<u8>,
+    pub positions: Vec<f32>,
     pub cells: Vec<usize>,
 }
 
-impl<'a> PeerArea<'a> {
-    pub fn new(
-        id: u64,
-        tags: &'a Vec<(&str, &str)>,
-    ) -> PeerArea<'a> {
-        Self { id, tags, positions: vec![], cells: vec![] }
+impl PeerArea {
+    pub fn from_tags(id: u64, tags: &[(&str, &str)]) -> Result<PeerArea,Error> {
+        let (feature_type, labels) = tags::parse(tags)?;
+        Ok(Self { id, feature_type, labels, positions: vec![], cells: vec![] })
     }
-    pub fn push(&mut self, positions: &[f64], holes: &[usize]) -> () {
-        let cells = earcutr::earcut(&positions.to_vec(), &holes.to_vec(), 2);
+    pub fn new(id: u64, feature_type: u64, labels: &[u8]) -> PeerArea {
+        Self {
+            id,
+            feature_type,
+            labels: labels.to_vec(),
+            positions: vec![],
+            cells: vec![]
+        }
+    }
+    pub fn push(&mut self, positions: &[f32], holes: &[usize]) -> () {
+        let cells = earcutr::earcut(
+            &positions.iter().map(|p| *p as f64).collect(),
+            &holes.to_vec(),
+            2
+        );
         let offset = self.positions.len() / 2;
         self.cells.extend(cells.iter().map(|c| c+offset).collect::<Vec<usize>>());
         self.positions.extend_from_slice(positions);
     }
 }
 
-impl<'a> ToBytesLE for PeerArea<'a> {
+impl ToBytesLE for PeerArea {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
-        let (typ, label) = tags::parse(&self.tags)?;
         let pcount = self.positions.len()/2;
-        let typ_length = varint::length(typ);
+        let ft_length = varint::length(self.feature_type);
         let id_length = varint::length(self.id);
         let pcount_length = varint::length(pcount as u64);
         let clen = varint::length((self.cells.len() / 3) as u64);
@@ -63,20 +75,20 @@ impl<'a> ToBytesLE for PeerArea<'a> {
 
         let mut buf = vec![
             0u8;
-            1 + typ_length
+            1 + ft_length
                 + id_length
                 + pcount_length
                 + (2 * 4 * pcount)
                 + clen
                 + clen_data
-                + label.len()
+                + self.labels.len()
         ];
 
         let mut offset = 0;
         buf[offset] = 0x03;
 
         offset += 1;
-        offset += varint::encode_with_offset(typ, &mut buf, offset)?;
+        offset += varint::encode_with_offset(self.feature_type, &mut buf, offset)?;
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
         offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
@@ -92,7 +104,7 @@ impl<'a> ToBytesLE for PeerArea<'a> {
             offset += varint::encode_with_offset(cell as u64, &mut buf, offset)?;
         }
 
-        label::encode_with_offset(&label, &mut buf, offset);
+        label::encode_with_offset(&self.labels, &mut buf, offset);
         return Ok(buf);
     }
 }

@@ -15,7 +15,7 @@ pub fn get_tag_length(tag: &(&str, &str)) -> usize {
     get_tag(tag).len()
 }
 
-pub fn get_label_length(tags: &Vec<(&str, &str)>) -> usize {
+pub fn get_label_length(tags: &[(&str, &str)]) -> usize {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
     }
@@ -34,7 +34,7 @@ pub fn get_label_length(tags: &Vec<(&str, &str)>) -> usize {
     return label_len;
 }
 
-pub fn parse(tags: &Vec<(&str, &str)>) -> Result<(u64, Vec<u8>), Error> {
+pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
         static ref ALL_TYPES: HashMap<&'static str, u64> = osm_types::get_types();

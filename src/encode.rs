@@ -1,11 +1,11 @@
-use crate::{PeerArea, PeerLine, PeerNode, Member, MemberRole};
+use crate::{PeerArea, PeerLine, PeerNode, Member, MemberRole,tags};
 use desert::ToBytesLE;
 use failure::Error;
 use osm_is_area;
 use std::collections::HashMap;
 
-pub fn node(id: u64, point: (f64, f64), tags: &Vec<(&str, &str)>) -> Result<Vec<u8>, Error> {
-    let node = PeerNode::new(id, point, &tags);
+pub fn node(id: u64, point: (f32, f32), tags: &[(&str, &str)]) -> Result<Vec<u8>, Error> {
+    let node = PeerNode::from_tags(id, point, &tags)?;
     return node.to_bytes_le();
 }
 
@@ -26,19 +26,42 @@ fn encode_way_line() {
 
 pub fn way(
     id: u64,
-    tags: &Vec<(&str, &str)>,
-    refs: &Vec<i64>,
-    deps: &HashMap<i64, (f64, f64)>,
+    tags: &[(&str, &str)],
+    refs: &[u64],
+    deps: &HashMap<u64, (f32, f32)>,
 ) -> Result<Vec<u8>, Error> {
     let len = refs.len();
-    if osm_is_area::way(&tags, &refs) {
-        let (_,positions) = get_positions(&refs, &deps, false, -1)?;
-        let mut area = PeerArea::new(id, &tags);
+    if osm_is_area::way(tags, refs) {
+        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
+        let mut area = PeerArea::from_tags(id, &tags)?;
+        area.push(&positions, &vec![]);
+        area.to_bytes_le()
+    } else if len > 1 {
+        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
+        let line = PeerLine::from_tags(id, &tags, &positions)?;
+        line.to_bytes_le()
+    } else {
+        Ok(vec![])
+    }
+}
+
+pub fn way_from_parsed(
+    id: u64,
+    feature_type: u64,
+    is_area: bool,
+    labels: &[u8],
+    refs: &[u64],
+    deps: &HashMap<u64, (f32, f32)>,
+) -> Result<Vec<u8>, Error> {
+    let len = refs.len();
+    if is_area {
+        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
+        let mut area = PeerArea::new(id, feature_type, labels);
         area.push(&positions, &vec![]);
         return area.to_bytes_le();
     } else if len > 1 {
-        let (_,positions) = get_positions(&refs, &deps, false, -1)?;
-        let line = PeerLine::new(id, &tags, &positions);
+        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
+        let line = PeerLine::new(id, feature_type, labels, &positions);
         return line.to_bytes_le();
     } else {
         return Ok(vec![]);
@@ -47,24 +70,36 @@ pub fn way(
 
 pub fn relation(
     id: u64,
-    tags: &Vec<(&str, &str)>,
-    members: &Vec<Member>,
-    nodes: &HashMap<i64, (f64, f64)>,
-    ways: &HashMap<i64, Vec<i64>>,
+    tags: &[(&str, &str)],
+    members: &[Member],
+    nodes: &HashMap<u64, (f32, f32)>,
+    ways: &HashMap<u64, Vec<u64>>,
 ) -> Result<Vec<u8>, Error> {
     // osm_is_area only checks members.is_empty():
-    if members.is_empty() || !osm_is_area::relation(&tags, &vec![0]) {
-        return Ok(vec![]);
-    }
+    let is_area = osm_is_area::relation(&tags, &vec![0]);
+    let (feature_type, labels) = tags::parse(tags)?;
+    relation_from_parsed(id, feature_type, is_area, &labels, members, nodes, ways)
+}
+
+pub fn relation_from_parsed(
+    id: u64,
+    feature_type: u64,
+    is_area: bool,
+    labels: &[u8],
+    members: &[Member],
+    nodes: &HashMap<u64, (f32, f32)>,
+    ways: &HashMap<u64, Vec<u64>>,
+) -> Result<Vec<u8>, Error> {
+    if members.is_empty() || !is_area { return Ok(vec![]) }
     let mut mmembers: Vec<Member> = members.to_vec();
     Member::drain(&mut mmembers, ways);
     mmembers = Member::sort(&mmembers, ways);
 
-    let mut area = PeerArea::new(id, &tags);
+    let mut area = PeerArea::new(id, feature_type, labels);
     let mut positions = vec![];
     let mut holes = vec![];
     let mut closed = false;
-    let mut ref0 = -1;
+    let mut ref0 = u64::MAX;
 
     for m in mmembers.iter() {
         match m.role {
@@ -73,32 +108,32 @@ pub fn relation(
                     area.push(&positions, &holes);
                     positions.clear();
                     holes.clear();
-                    ref0 = -1;
+                    ref0 = u64::MAX;
                 }
-                let refs = ways.get(&(m.id as i64)).unwrap();
+                let refs = ways.get(&m.id).unwrap();
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
                 closed = c;
                 positions.extend(pts);
                 if closed {
-                    ref0 = -1;
-                } else if ref0 < 0 && m.reverse {
+                    ref0 = u64::MAX;
+                } else if ref0 == u64::MAX && m.reverse {
                     ref0 = *refs.last().unwrap();
-                } else if ref0 < 0 {
+                } else if ref0 == u64::MAX {
                     ref0 = *refs.first().unwrap();
                 }
             },
             MemberRole::Inner() => {
-                let refs = ways.get(&(m.id as i64)).unwrap();
+                let refs = ways.get(&m.id).unwrap();
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
-                if ref0 < 0 && m.reverse {
+                if ref0 == u64::MAX && m.reverse {
                     ref0 = *refs.last().unwrap();
                     holes.push(positions.len()/2);
-                } else if ref0 < 0 {
+                } else if ref0 == u64::MAX {
                     ref0 = *refs.first().unwrap();
                     holes.push(positions.len()/2);
                 }
                 if c {
-                    ref0 = -1;
+                    ref0 = u64::MAX;
                 }
                 positions.extend(pts);
             },
@@ -114,11 +149,11 @@ pub fn relation(
 }
 
 fn get_positions(
-    refs: &Vec<i64>,
-    nodes: &HashMap<i64, (f64, f64)>,
+    refs: &[u64],
+    nodes: &HashMap<u64, (f32, f32)>,
     reverse: bool,
-    ref0: i64,
-) -> Result<(bool,Vec<f64>), Error> {
+    ref0: u64,
+) -> Result<(bool,Vec<f32>), Error> {
     let mut positions = Vec::with_capacity(nodes.len() * 2);
     let irefs = (0..refs.len()).map(|i| refs[match reverse {
         true => refs.len()-i-1,
