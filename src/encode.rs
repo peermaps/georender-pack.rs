@@ -9,6 +9,16 @@ pub fn node(id: u64, point: (f32, f32), tags: &[(&str, &str)]) -> Result<Vec<u8>
     return node.to_bytes_le();
 }
 
+pub fn node_from_parsed(
+    id: u64,
+    point: (f32, f32),
+    feature_type: u64,
+    labels: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let node = PeerNode::new(id, point, feature_type, labels);
+    return node.to_bytes_le();
+}
+
 #[test]
 fn encode_way_line() {
     let tags = vec![("source", "bing"), ("highway", "residential")];
