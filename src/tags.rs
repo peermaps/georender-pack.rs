@@ -13,8 +13,7 @@ fn two_tags_one_has_no_priority() {
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
     let tags = vec![("name", "I am Stoplight"), ("highway", "traffic_signals"), ("power", "cable")];
-    let node = PeerNode::new(id, (lon, lat), &tags);
-
+    let node = PeerNode::from_tags(id, (lon, lat), &tags);
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
@@ -30,7 +29,7 @@ fn two_tags_both_valid_priorities() {
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
     let tags = vec![("name", "I am Stoplight"), ("route", "canoe"), ("power", "cable")];
-    let node = PeerNode::new(id, (lon, lat), &tags);
+    let node = PeerNode::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
@@ -48,7 +47,7 @@ fn two_tags_same_priority() {
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
     let tags = vec![("name", "I am Stoplight"), ("railway", "wash"), ("power", "cable")];
-    let node = PeerNode::new(id, (lon, lat), &tags);
+    let node = PeerNode::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
@@ -57,7 +56,7 @@ fn two_tags_same_priority() {
     );
 
     let tags = vec![("name", "I am Stoplight"), ("power", "cable"), ("railway", "wash")];
-    let node = PeerNode::new(id, (lon, lat), &tags);
+    let node = PeerNode::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
@@ -79,7 +78,7 @@ pub fn get_tag_length(tag: &(&str, &str)) -> usize {
     get_tag(tag).len()
 }
 
-pub fn get_label_length(tags: &Vec<(&str, &str)>) -> usize {
+pub fn get_label_length(tags: &[(&str, &str)]) -> usize {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
     }
@@ -117,7 +116,7 @@ pub fn get_tag_priority (tag: &(&str, &str)) -> Option<u64> {
     return Some(res.clone());
 }
 
-pub fn parse(tags: &Vec<(&str, &str)>) -> Result<(u64, Vec<u8>), Error> {
+pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
     lazy_static! {
         static ref RE: Regex = Regex::new("^(|[^:]+_)name($|:)").unwrap();
         static ref ALL_TYPES: HashMap<&'static str, u64> = osm_types::get_types();
