@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
-pub fn get_priorities<'a>() -> HashMap<&'a str, u64> {
-    return [
-        ("aerialway.cable_car": 100),
-        ("aerialway.chair_lift": 100),
+pub fn get_priorities<'a>() -> Vec<(&'a str, u64)> {
+    return vec![
+        ("aerialway.cable_car", 100),
+        ("aerialway.chair_lift", 100),
         ("aeroway.aerodrome", 100),
         ("amenity.*", 60),
         ("amenity.university", 100),
@@ -18,7 +16,7 @@ pub fn get_priorities<'a>() -> HashMap<&'a str, u64> {
         ("power.*", 100),
         ("public_transport.*", 50),
         ("railway.*", 100),
-        ("routes.*", 10),
-        ("sport.*", 1)
-    ]
+        ("route.*", 10),
+        ("sport.*", 1),
+    ];
 }

@@ -11,6 +11,7 @@ pub mod varint;
 pub mod encode;
 pub mod label;
 pub mod osm_types;
+pub mod tag_priorities;
 pub mod tags;
 
 mod node;
