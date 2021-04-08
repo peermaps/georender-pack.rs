@@ -131,7 +131,7 @@ pub fn relation_from_parsed(
                 } else if ref0 == u64::MAX {
                     ref0 = *refs.first().unwrap();
                 }
-            },
+            }
             MemberRole::Inner() => {
                 let refs = ways.get(&m.id).unwrap();
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
@@ -140,14 +140,14 @@ pub fn relation_from_parsed(
                     holes.push(positions.len()/2);
                 } else if ref0 == u64::MAX {
                     ref0 = *refs.first().unwrap();
-                    holes.push(positions.len()/2);
+                    holes.push(positions.len() / 2);
                 }
                 if c {
                     ref0 = u64::MAX;
                 }
                 positions.extend(pts);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     if closed && !positions.is_empty() {
@@ -165,10 +165,12 @@ fn get_positions(
     ref0: u64,
 ) -> Result<(bool,Vec<f32>), Error> {
     let mut positions = Vec::with_capacity(nodes.len() * 2);
-    let irefs = (0..refs.len()).map(|i| refs[match reverse {
-        true => refs.len()-i-1,
-        false => i,
-    }]);
+    let irefs = (0..refs.len()).map(|i| {
+        refs[match reverse {
+            true => refs.len() - i - 1,
+            false => i,
+        }]
+    });
     let mut closed = false;
     for r in irefs {
         if r == ref0 {
@@ -176,12 +178,12 @@ fn get_positions(
             continue;
         }
         match nodes.get(&r) {
-            Some((lon,lat)) => {
+            Some((lon, lat)) => {
                 positions.push(*lon);
                 positions.push(*lat);
-            },
+            }
             None => bail!("Could not find dep for {}", &r),
         }
     }
-    return Ok((closed,positions));
+    return Ok((closed, positions));
 }

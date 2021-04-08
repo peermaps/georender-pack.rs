@@ -4,17 +4,17 @@ use desert::ToBytesLE;
 use failure::Error;
 
 #[test]
-fn peer_node() -> Result<(),Error> {
+fn peer_node() -> Result<(), Error> {
     let id = 1831881213;
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
-    let tags = vec![("name", "Neu Broderstorf"), ("traffic_sign", "city_limit")];
+    let tags = vec![("name", "Neu Broderstorf"), ("aerialway", "cable_car")];
     let node = PeerNode::from_tags(id, (lon, lat), &tags)?;
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
-        "01c805fd93c1e906211044413a5c5842103d4e65752042726f64657273746f726600"
+        "0100fd93c1e906211044413a5c5842103d4e65752042726f64657273746f726600"
     );
     Ok(())
 }
@@ -28,12 +28,22 @@ pub struct PeerNode {
 }
 
 impl PeerNode {
-    pub fn from_tags(id: u64, point: (f32, f32), tags: &[(&str,&str)]) -> Result<PeerNode,Error> {
-        let (feature_type,labels) = tags::parse(tags)?;
-        Ok(PeerNode { id, point, feature_type, labels })
+    pub fn from_tags(id: u64, point: (f32, f32), tags: &[(&str, &str)]) -> Result<PeerNode, Error> {
+        let (feature_type, labels) = tags::parse(tags)?;
+        Ok(PeerNode {
+            id,
+            point,
+            feature_type,
+            labels,
+        })
     }
     pub fn new(id: u64, point: (f32, f32), feature_type: u64, labels: &[u8]) -> PeerNode {
-        PeerNode { id, point, feature_type, labels: labels.to_vec() }
+        PeerNode {
+            id,
+            point,
+            feature_type,
+            labels: labels.to_vec(),
+        }
     }
 }
 
