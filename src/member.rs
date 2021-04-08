@@ -26,10 +26,10 @@ impl Member {
     pub fn new(id: u64, role: MemberRole, member_type: MemberType) -> Self {
         Member { id, role, member_type, reverse: false }
     }
-    pub fn drain(members: &mut Vec<Member>, ways: &HashMap<i64, Vec<i64>>) -> () {
+    pub fn drain(members: &mut Vec<Member>, ways: &HashMap<u64, Vec<u64>>) -> () {
         // the only members that matter for rendering purposes are inner and outer ways
         members.drain_filter(|m| {
-            let ref_len = ways.get(&(m.id as i64)).and_then(|refs| Some(refs.len()));
+            let ref_len = ways.get(&m.id).and_then(|refs| Some(refs.len()));
             match (&m.role,&m.member_type,ref_len) {
                 (MemberRole::Inner(),MemberType::Way(),Some(len)) => len == 0,
                 (MemberRole::Outer(),MemberType::Way(),Some(len)) => len == 0,
@@ -37,12 +37,12 @@ impl Member {
             }
         });
     }
-    pub fn sort(members: &[Member], ways: &HashMap<i64, Vec<i64>>) -> Vec<Member> {
+    pub fn sort(members: &[Member], ways: &HashMap<u64, Vec<u64>>) -> Vec<Member> {
         if members.is_empty() { return vec![] }
-        let mut first_ids: HashMap<i64,Vec<usize>> = HashMap::new();
-        let mut last_ids: HashMap<i64,Vec<usize>> = HashMap::new();
+        let mut first_ids: HashMap<u64,Vec<usize>> = HashMap::new();
+        let mut last_ids: HashMap<u64,Vec<usize>> = HashMap::new();
         for (i,m) in members.iter().enumerate() {
-            let refs = ways.get(&(m.id as i64)).unwrap();
+            let refs = ways.get(&m.id).unwrap();
             let fi = refs.first().unwrap();
             let li = refs.last().unwrap();
             match first_ids.get_mut(fi) {
@@ -67,8 +67,8 @@ impl Member {
             }
             visited.insert(i);
             let mut m = members[i].clone();
+            let id = m.id;
             m.reverse = reverse;
-            let id = m.id as i64;
             sorted.push(m);
             if !ways.contains_key(&id) {
                 i = j;
