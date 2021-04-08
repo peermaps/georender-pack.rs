@@ -7,14 +7,18 @@ use std::collections::HashMap;
 
 #[test]
 fn two_tags_one_has_no_priority() {
-    use desert::ToBytesLE;
     use crate::node::PeerNode;
+    use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
-    let tags = vec![("name", "I am Stoplight"), ("highway", "traffic_signals"), ("power", "cable")];
+    let tags = vec![
+        ("name", "I am Stoplight"),
+        ("highway", "traffic_signals"),
+        ("power", "cable"),
+    ];
     let node = PeerNode::from_tags(id, (lon, lat), &tags);
-    let bytes = node.to_bytes_le().unwrap();
+    let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
         "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
@@ -23,48 +27,58 @@ fn two_tags_one_has_no_priority() {
 
 #[test]
 fn two_tags_both_valid_priorities() {
-    use desert::ToBytesLE;
     use crate::node::PeerNode;
+    use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
-    let tags = vec![("name", "I am Stoplight"), ("route", "canoe"), ("power", "cable")];
+    let tags = vec![
+        ("name", "I am Stoplight"),
+        ("route", "canoe"),
+        ("power", "cable"),
+    ];
     let node = PeerNode::from_tags(id, (lon, lat), &tags);
 
-    let bytes = node.to_bytes_le().unwrap();
+    let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
         "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
     );
 }
-
 
 #[test]
 fn two_tags_same_priority() {
-    use desert::ToBytesLE;
     use crate::node::PeerNode;
+    use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
-    let tags = vec![("name", "I am Stoplight"), ("railway", "wash"), ("power", "cable")];
+    let tags = vec![
+        ("name", "I am Stoplight"),
+        ("railway", "wash"),
+        ("power", "cable"),
+    ];
     let node = PeerNode::from_tags(id, (lon, lat), &tags);
 
-    let bytes = node.to_bytes_le().unwrap();
+    let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
         "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
     );
 
-    let tags = vec![("name", "I am Stoplight"), ("power", "cable"), ("railway", "wash")];
+    let tags = vec![
+        ("name", "I am Stoplight"),
+        ("power", "cable"),
+        ("railway", "wash"),
+    ];
     let node = PeerNode::from_tags(id, (lon, lat), &tags);
 
-    let bytes = node.to_bytes_le().unwrap();
+    let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
-        "018606fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
+        "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
     );
 }
-
 
 pub fn get_tag(tag: &(&str, &str)) -> String {
     lazy_static! {
@@ -97,7 +111,7 @@ pub fn get_label_length(tags: &[(&str, &str)]) -> usize {
     return label_len;
 }
 
-pub fn get_tag_priority (tag: &(&str, &str)) -> Option<u64> {
+pub fn get_tag_priority(tag: &(&str, &str)) -> Option<u64> {
     lazy_static! {
         static ref ALL_PRIORITIES: Vec<(&'static str, u64)> = tag_priorities::get_priorities();
     }
@@ -136,11 +150,11 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
         match ALL_TYPES.get(formatted_key) {
             Some(this_type) => {
                 println!("Found type {} for {}", this_type, formatted_key);
-                match get_tag_priority(tag)  {
+                match get_tag_priority(tag) {
                     Some(_priority) => {
                         println!("Found priority {} for {}", _priority, formatted_key);
                         priority = _priority
-                    },
+                    }
                     None => {
                         priority = DEFAULT_PRIORITY.clone();
                         println!("Using default priority {} for {}", priority, formatted_key);
@@ -153,7 +167,7 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
                     top_type = *this_type;
                     println!("top priority {} {}", top_priority, top_type);
                 }
-            },
+            }
             None => {
                 println!("Found no type for {}", formatted_key);
             }
