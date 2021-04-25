@@ -149,27 +149,27 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
 
         match ALL_TYPES.get(formatted_key) {
             Some(this_type) => {
-                println!("Found type {} for {}", this_type, formatted_key);
+                //println!("Found type {} for {}", this_type, formatted_key);
                 match get_tag_priority(tag) {
                     Some(_priority) => {
-                        println!("Found priority {} for {}", _priority, formatted_key);
+                        //println!("Found priority {} for {}", _priority, formatted_key);
                         priority = _priority
                     }
                     None => {
                         priority = DEFAULT_PRIORITY.clone();
-                        println!("Using default priority {} for {}", priority, formatted_key);
+                        //println!("Using default priority {} for {}", priority, formatted_key);
                     }
                 }
 
-                println!("comparing {} top and {} priority", top_priority, priority);
+                //println!("comparing {} top and {} priority", top_priority, priority);
                 if top_priority <= priority {
                     top_priority = priority;
                     top_type = *this_type;
-                    println!("top priority {} {}", top_priority, top_type);
+                    //println!("top priority {} {}", top_priority, top_type);
                 }
             }
             None => {
-                println!("Found no type for {}", formatted_key);
+                //println!("Found no type for {}", formatted_key);
             }
         }
 
@@ -201,6 +201,6 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
 
     label[offset] = 0x00;
 
-    println!("top type {}", top_type);
+    //println!("top type {}", top_type);
     return Ok((top_type, label));
 }
