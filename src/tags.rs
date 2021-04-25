@@ -180,7 +180,7 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
                 let tag_length = get_tag_length(tag);
 
                 let maybe_offset =
-                    varint::encode_with_offset(tag_length as u64, &mut label, offset);
+                    varint::encode(tag_length as u64, &mut label[offset..]);
                 match maybe_offset {
                     Ok(is_offset) => {
                         offset += is_offset;

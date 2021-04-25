@@ -59,12 +59,12 @@ impl ToBytesLE for PeerNode {
         buf[0] = 0x01;
 
         let mut offset = 1;
-        offset += varint::encode_with_offset(self.feature_type, &mut buf, offset)?;
-        offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
+        offset += varint::encode(self.feature_type, &mut buf[offset..])?;
+        offset += varint::encode(self.id, &mut buf[offset..])?;
 
         offset += self.point.0.write_bytes_le(&mut buf[offset..])?;
         offset += self.point.1.write_bytes_le(&mut buf[offset..])?;
-        label::encode_with_offset(&self.labels, &mut buf, offset);
+        buf[offset..].copy_from_slice(&self.labels);
         Ok(buf)
     }
 }

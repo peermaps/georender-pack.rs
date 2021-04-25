@@ -67,17 +67,17 @@ impl ToBytesLE for PeerLine {
         buf[offset] = 0x02;
         offset += 1;
 
-        offset += varint::encode_with_offset(self.feature_type, &mut buf, offset)?;
+        offset += varint::encode(self.feature_type, &mut buf[offset..])?;
 
-        offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
+        offset += varint::encode(self.id, &mut buf[offset..])?;
 
-        offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
+        offset += varint::encode(pcount as u64, &mut buf[offset..])?;
 
         for p in self.positions.iter() {
             offset += p.write_bytes_le(&mut buf[offset..])?;
         }
 
-        label::encode_with_offset(&self.labels, &mut buf, offset);
+        buf[offset..].copy_from_slice(&self.labels);
         return Ok(buf);
     }
 }
