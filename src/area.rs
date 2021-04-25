@@ -1,6 +1,6 @@
 use crate::varint;
-use crate::{label, point, tags};
-use desert::ToBytesLE;
+use crate::{label, tags};
+use desert::{ToBytesLE, FromBytesLE};
 use earcutr;
 use failure::Error;
 
@@ -23,12 +23,16 @@ fn peer_area() -> Result<(),Error> {
     let bytes = area.to_bytes_le().unwrap();
     assert_eq!(
         "03c901b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef410101000200",
-        hex::encode(bytes)
+        hex::encode(&bytes)
+    );
+    assert_eq!(
+        PeerArea::from_bytes_le(&bytes)?,
+        (bytes.len(),area)
     );
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct PeerArea {
     pub id: u64,
     pub feature_type: u64,
@@ -94,7 +98,7 @@ impl ToBytesLE for PeerArea {
 
         // positions
         for p in self.positions.iter() {
-            offset += point::encode_with_offset(*p, &mut buf, offset)?;
+            offset += p.write_bytes_le(&mut buf[offset..])?;
         }
 
         offset += varint::encode_with_offset((self.cells.len()/3) as u64, &mut buf, offset)?;
@@ -106,5 +110,41 @@ impl ToBytesLE for PeerArea {
 
         label::encode_with_offset(&self.labels, &mut buf, offset);
         return Ok(buf);
+    }
+}
+
+impl FromBytesLE for PeerArea {
+    fn from_bytes_le(buf: &[u8]) -> Result<(usize,Self), Error> {
+        if buf[0] != 0x03 {
+            failure::bail!["parsing line failed. expected 0x03, received 0x{:02x}", buf[0]];
+        }
+        let mut offset = 1;
+        let (s,feature_type) = varint::decode(&buf[offset..])?;
+        offset += s;
+        let (s,id) = varint::decode(&buf[offset..])?;
+        offset += s;
+
+        let (s,pcount) = varint::decode(&buf[offset..])?;
+        offset += s;
+        let mut positions = Vec::with_capacity((pcount as usize)*2);
+        for _ in 0..pcount*2 {
+            let (s,x) = f32::from_bytes_le(&buf[offset..])?;
+            offset += s;
+            positions.push(x);
+        }
+
+        let (s,ccount) = varint::decode(&buf[offset..])?;
+        offset += s;
+        let mut cells = Vec::with_capacity((ccount as usize)*3);
+        for _ in 0..ccount*3 {
+            let (s,x) = varint::decode(&buf[offset..])?;
+            offset += s;
+            cells.push(x as usize);
+        }
+
+        let s = label::scan(&buf[offset..])?;
+        let labels = buf[offset..offset+s].to_vec();
+        offset += s;
+        Ok((offset, Self { id, positions, cells, feature_type, labels }))
     }
 }

@@ -1,6 +1,6 @@
 use crate::varint;
-use crate::{label, point, tags};
-use desert::ToBytesLE;
+use crate::{label, tags};
+use desert::{ToBytesLE,FromBytesLE};
 use failure::Error;
 
 #[test]
@@ -13,13 +13,17 @@ fn peer_node() -> Result<(), Error> {
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
-        hex::encode(bytes),
+        hex::encode(&bytes),
         "0100fd93c1e906211044413a5c5842103d4e65752042726f64657273746f726600"
+    );
+    assert_eq!(
+        PeerNode::from_bytes_le(&bytes)?,
+        (bytes.len(),node)
     );
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct PeerNode {
     pub id: u64,
     pub point: (f32, f32),
@@ -58,10 +62,30 @@ impl ToBytesLE for PeerNode {
         offset += varint::encode_with_offset(self.feature_type, &mut buf, offset)?;
         offset += varint::encode_with_offset(self.id, &mut buf, offset)?;
 
-        offset += point::encode_with_offset(self.point.0, &mut buf, offset)?;
-        offset += point::encode_with_offset(self.point.1, &mut buf, offset)?;
-
+        offset += self.point.0.write_bytes_le(&mut buf[offset..])?;
+        offset += self.point.1.write_bytes_le(&mut buf[offset..])?;
         label::encode_with_offset(&self.labels, &mut buf, offset);
         Ok(buf)
+    }
+}
+
+impl FromBytesLE for PeerNode {
+    fn from_bytes_le(buf: &[u8]) -> Result<(usize,Self), Error> {
+        if buf[0] != 0x01 {
+            failure::bail!["parsing node failed. expected 0x01, received 0x{:02x}", buf[0]];
+        }
+        let mut offset = 1;
+        let (s,feature_type) = varint::decode(&buf[offset..])?;
+        offset += s;
+        let (s,id) = varint::decode(&buf[offset..])?;
+        offset += s;
+        let (s,lon) = f32::from_bytes_le(&buf[offset..])?;
+        offset += s;
+        let (s,lat) = f32::from_bytes_le(&buf[offset..])?;
+        offset += s;
+        let s = label::scan(&buf[offset..])?;
+        let labels = buf[offset..offset+s].to_vec();
+        offset += s;
+        Ok((offset, Self { id, point: (lon,lat), feature_type, labels }))
     }
 }

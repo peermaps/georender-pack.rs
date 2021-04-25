@@ -1,6 +1,6 @@
 use crate::varint;
-use crate::{label, point, tags};
-use desert::ToBytesLE;
+use crate::{label, tags};
+use desert::{ToBytesLE, FromBytesLE};
 use failure::Error;
 
 #[test]
@@ -17,12 +17,16 @@ fn peer_line() -> Result<(),Error> {
     let bytes = line.to_bytes_le().unwrap();
     assert_eq!(
         "029c03b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef4100",
-        hex::encode(bytes)
+        hex::encode(&bytes)
+    );
+    assert_eq!(
+        PeerLine::from_bytes_le(&bytes)?,
+        (bytes.len(),line)
     );
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct PeerLine {
     pub id: u64,
     pub positions: Vec<f32>,
@@ -70,10 +74,38 @@ impl ToBytesLE for PeerLine {
         offset += varint::encode_with_offset(pcount as u64, &mut buf, offset)?;
 
         for p in self.positions.iter() {
-            offset += point::encode_with_offset(*p, &mut buf, offset)?;
+            offset += p.write_bytes_le(&mut buf[offset..])?;
         }
 
         label::encode_with_offset(&self.labels, &mut buf, offset);
         return Ok(buf);
+    }
+}
+
+impl FromBytesLE for PeerLine {
+    fn from_bytes_le(buf: &[u8]) -> Result<(usize,Self), Error> {
+        if buf[0] != 0x02 {
+            failure::bail!["parsing line failed. expected 0x02, received 0x{:02x}", buf[0]];
+        }
+        let mut offset = 1;
+        let (s,feature_type) = varint::decode(&buf[offset..])?;
+        offset += s;
+        let (s,id) = varint::decode(&buf[offset..])?;
+        offset += s;
+
+        let (s,pcount) = varint::decode(&buf[offset..])?;
+        offset += s;
+
+        let mut positions = Vec::with_capacity((pcount as usize)*2);
+        for _ in 0..pcount*2 {
+            let (s,x) = f32::from_bytes_le(&buf[offset..])?;
+            offset += s;
+            positions.push(x);
+        }
+
+        let s = label::scan(&buf[offset..])?;
+        let labels = buf[offset..offset+s].to_vec();
+        offset += s;
+        Ok((offset, Self { id, positions, feature_type, labels }))
     }
 }
