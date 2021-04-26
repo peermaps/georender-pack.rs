@@ -1,11 +1,11 @@
-use crate::{PeerArea, PeerLine, PeerNode, Member, MemberRole,tags};
+use crate::{Area, Line, Point, Member, MemberRole,tags};
 use desert::ToBytesLE;
 use failure::Error;
 use osm_is_area;
 use std::collections::HashMap;
 
 pub fn node(id: u64, point: (f32, f32), tags: &[(&str, &str)]) -> Result<Vec<u8>, Error> {
-    let node = PeerNode::from_tags(id, point, &tags)?;
+    let node = Point::from_tags(id, point, &tags)?;
     return node.to_bytes_le();
 }
 
@@ -15,7 +15,7 @@ pub fn node_from_parsed(
     feature_type: u64,
     labels: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let node = PeerNode::new(id, point, feature_type, labels);
+    let node = Point::new(id, point, feature_type, labels);
     return node.to_bytes_le();
 }
 
@@ -43,12 +43,12 @@ pub fn way(
     let len = refs.len();
     if osm_is_area::way(tags, refs) {
         let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let mut area = PeerArea::from_tags(id, &tags)?;
+        let mut area = Area::from_tags(id, &tags)?;
         area.push(&positions, &vec![]);
         area.to_bytes_le()
     } else if len > 1 {
         let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let line = PeerLine::from_tags(id, &tags, &positions)?;
+        let line = Line::from_tags(id, &tags, &positions)?;
         line.to_bytes_le()
     } else {
         Ok(vec![])
@@ -66,12 +66,12 @@ pub fn way_from_parsed(
     let len = refs.len();
     if is_area {
         let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let mut area = PeerArea::new(id, feature_type, labels);
+        let mut area = Area::new(id, feature_type, labels);
         area.push(&positions, &vec![]);
         return area.to_bytes_le();
     } else if len > 1 {
         let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let line = PeerLine::new(id, feature_type, labels, &positions);
+        let line = Line::new(id, feature_type, labels, &positions);
         return line.to_bytes_le();
     } else {
         return Ok(vec![]);
@@ -105,7 +105,7 @@ pub fn relation_from_parsed(
     Member::drain(&mut mmembers, ways);
     mmembers = Member::sort(&mmembers, ways);
 
-    let mut area = PeerArea::new(id, feature_type, labels);
+    let mut area = Area::new(id, feature_type, labels);
     let mut positions = vec![];
     let mut holes = vec![];
     let mut closed = false;

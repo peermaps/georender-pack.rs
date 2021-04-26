@@ -12,7 +12,7 @@ fn peer_line() -> Result<(),Error> {
         31.184858400000003, 29.8983899,
     ];
     let id: u64 = 234941233;
-    let line = PeerLine::from_tags(id, &tags, &positions)?;
+    let line = Line::from_tags(id, &tags, &positions)?;
 
     let bytes = line.to_bytes_le().unwrap();
     assert_eq!(
@@ -20,32 +20,32 @@ fn peer_line() -> Result<(),Error> {
         hex::encode(&bytes)
     );
     assert_eq!(
-        PeerLine::from_bytes_le(&bytes)?,
+        Line::from_bytes_le(&bytes)?,
         (bytes.len(),line)
     );
     Ok(())
 }
 
 #[derive(Debug,Clone,PartialEq)]
-pub struct PeerLine {
+pub struct Line {
     pub id: u64,
     pub positions: Vec<f32>,
     pub feature_type: u64,
     pub labels: Vec<u8>,
 }
 
-impl PeerLine {
-    pub fn from_tags(id: u64, tags: &[(&str, &str)], positions: &[f32]) -> Result<PeerLine,Error> {
+impl Line {
+    pub fn from_tags(id: u64, tags: &[(&str, &str)], positions: &[f32]) -> Result<Line,Error> {
         let (feature_type, labels) = tags::parse(tags)?;
-        Ok(PeerLine {
+        Ok(Line {
             id,
             positions: positions.to_vec(),
             feature_type,
             labels
         })
     }
-    pub fn new(id: u64, feature_type: u64, labels: &[u8], positions: &[f32]) -> PeerLine {
-        PeerLine {
+    pub fn new(id: u64, feature_type: u64, labels: &[u8], positions: &[f32]) -> Line {
+        Line {
             id,
             feature_type,
             labels: labels.to_vec(),
@@ -54,7 +54,7 @@ impl PeerLine {
     }
 }
 
-impl ToBytesLE for PeerLine {
+impl ToBytesLE for Line {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let pcount = self.positions.len()/2;
         let ft_length = varint::length(self.feature_type);
@@ -82,7 +82,7 @@ impl ToBytesLE for PeerLine {
     }
 }
 
-impl FromBytesLE for PeerLine {
+impl FromBytesLE for Line {
     fn from_bytes_le(buf: &[u8]) -> Result<(usize,Self), Error> {
         if buf[0] != 0x02 {
             failure::bail!["parsing line failed. expected 0x02, received 0x{:02x}", buf[0]];

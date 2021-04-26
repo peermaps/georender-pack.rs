@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 #[test]
 fn two_tags_one_has_no_priority() {
-    use crate::node::PeerNode;
+    use crate::node::Point;
     use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
@@ -17,7 +17,7 @@ fn two_tags_one_has_no_priority() {
         ("highway", "traffic_signals"),
         ("power", "cable"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
@@ -27,7 +27,7 @@ fn two_tags_one_has_no_priority() {
 
 #[test]
 fn two_tags_both_valid_priorities() {
-    use crate::node::PeerNode;
+    use crate::node::Point;
     use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
@@ -37,7 +37,7 @@ fn two_tags_both_valid_priorities() {
         ("route", "canoe"),
         ("power", "cable"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
@@ -48,7 +48,7 @@ fn two_tags_both_valid_priorities() {
 
 #[test]
 fn two_tags_same_priority() {
-    use crate::node::PeerNode;
+    use crate::node::Point;
     use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
@@ -58,7 +58,7 @@ fn two_tags_same_priority() {
         ("railway", "wash"),
         ("power", "cable"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
@@ -71,7 +71,7 @@ fn two_tags_same_priority() {
         ("power", "cable"),
         ("railway", "wash"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(

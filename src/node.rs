@@ -9,7 +9,7 @@ fn peer_node() -> Result<(), Error> {
     let lon = 12.253938100000001;
     let lat = 54.09006660000001;
     let tags = vec![("name", "Neu Broderstorf"), ("aerialway", "cable_car")];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags)?;
+    let node = Point::from_tags(id, (lon, lat), &tags)?;
 
     let bytes = node.to_bytes_le().unwrap();
     assert_eq!(
@@ -17,32 +17,32 @@ fn peer_node() -> Result<(), Error> {
         "0100fd93c1e906211044413a5c5842103d4e65752042726f64657273746f726600"
     );
     assert_eq!(
-        PeerNode::from_bytes_le(&bytes)?,
+        Point::from_bytes_le(&bytes)?,
         (bytes.len(),node)
     );
     Ok(())
 }
 
 #[derive(Debug,Clone,PartialEq)]
-pub struct PeerNode {
+pub struct Point {
     pub id: u64,
     pub point: (f32, f32),
     pub feature_type: u64,
     pub labels: Vec<u8>,
 }
 
-impl PeerNode {
-    pub fn from_tags(id: u64, point: (f32, f32), tags: &[(&str, &str)]) -> Result<PeerNode, Error> {
+impl Point {
+    pub fn from_tags(id: u64, point: (f32, f32), tags: &[(&str, &str)]) -> Result<Point, Error> {
         let (feature_type, labels) = tags::parse(tags)?;
-        Ok(PeerNode {
+        Ok(Point {
             id,
             point,
             feature_type,
             labels,
         })
     }
-    pub fn new(id: u64, point: (f32, f32), feature_type: u64, labels: &[u8]) -> PeerNode {
-        PeerNode {
+    pub fn new(id: u64, point: (f32, f32), feature_type: u64, labels: &[u8]) -> Point {
+        Point {
             id,
             point,
             feature_type,
@@ -51,7 +51,7 @@ impl PeerNode {
     }
 }
 
-impl ToBytesLE for PeerNode {
+impl ToBytesLE for Point {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let ft_length = varint::length(self.feature_type);
         let id_length = varint::length(self.id);
@@ -69,7 +69,7 @@ impl ToBytesLE for PeerNode {
     }
 }
 
-impl FromBytesLE for PeerNode {
+impl FromBytesLE for Point {
     fn from_bytes_le(buf: &[u8]) -> Result<(usize,Self), Error> {
         if buf[0] != 0x01 {
             failure::bail!["parsing node failed. expected 0x01, received 0x{:02x}", buf[0]];

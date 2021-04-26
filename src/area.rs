@@ -17,7 +17,7 @@ fn peer_area() -> Result<(),Error> {
         31.184858400000003, 29.8983899,
     ];
     let id: u64 = 234941233;
-    let mut area = PeerArea::from_tags(id, &tags)?;
+    let mut area = Area::from_tags(id, &tags)?;
     area.push(&positions, &vec![]);
 
     let bytes = area.to_bytes_le().unwrap();
@@ -26,14 +26,14 @@ fn peer_area() -> Result<(),Error> {
         hex::encode(&bytes)
     );
     assert_eq!(
-        PeerArea::from_bytes_le(&bytes)?,
+        Area::from_bytes_le(&bytes)?,
         (bytes.len(),area)
     );
     Ok(())
 }
 
 #[derive(Debug,Clone,PartialEq)]
-pub struct PeerArea {
+pub struct Area {
     pub id: u64,
     pub feature_type: u64,
     pub labels: Vec<u8>,
@@ -41,12 +41,12 @@ pub struct PeerArea {
     pub cells: Vec<usize>,
 }
 
-impl PeerArea {
-    pub fn from_tags(id: u64, tags: &[(&str, &str)]) -> Result<PeerArea,Error> {
+impl Area {
+    pub fn from_tags(id: u64, tags: &[(&str, &str)]) -> Result<Area,Error> {
         let (feature_type, labels) = tags::parse(tags)?;
         Ok(Self { id, feature_type, labels, positions: vec![], cells: vec![] })
     }
-    pub fn new(id: u64, feature_type: u64, labels: &[u8]) -> PeerArea {
+    pub fn new(id: u64, feature_type: u64, labels: &[u8]) -> Area {
         Self {
             id,
             feature_type,
@@ -67,7 +67,7 @@ impl PeerArea {
     }
 }
 
-impl ToBytesLE for PeerArea {
+impl ToBytesLE for Area {
     fn to_bytes_le(&self) -> Result<Vec<u8>, Error> {
         let pcount = self.positions.len()/2;
         let ft_length = varint::length(self.feature_type);
@@ -113,7 +113,7 @@ impl ToBytesLE for PeerArea {
     }
 }
 
-impl FromBytesLE for PeerArea {
+impl FromBytesLE for Area {
     fn from_bytes_le(buf: &[u8]) -> Result<(usize,Self), Error> {
         if buf[0] != 0x03 {
             failure::bail!["parsing line failed. expected 0x03, received 0x{:02x}", buf[0]];
