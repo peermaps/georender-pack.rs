@@ -1,20 +1,20 @@
 use std::collections::{HashMap,HashSet};
 
-#[derive(Clone)]
+#[derive(Debug,Clone)]
 pub enum MemberRole {
     Inner(),
     Outer(),
     Unused(),
 }
 
-#[derive(Clone)]
+#[derive(Debug,Clone)]
 pub enum MemberType {
     Node(),
     Way(),
     Relation(),
 }
 
-#[derive(Clone)]
+#[derive(Debug,Clone)]
 pub struct Member {
     pub id: u64,
     pub role: MemberRole,

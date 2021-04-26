@@ -152,13 +152,13 @@ pub fn relation_from_parsed(
     for m in mmembers.iter() {
         match m.role {
             MemberRole::Outer() => {
+                let refs = ways.get(&m.id).unwrap();
                 if closed {
                     area.push(&positions, &holes);
                     positions.clear();
                     holes.clear();
                     ref0 = u64::MAX;
                 }
-                let refs = ways.get(&m.id).unwrap();
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
                 closed = c;
                 positions.extend(pts);
@@ -188,7 +188,7 @@ pub fn relation_from_parsed(
             _ => {}
         }
     }
-    if closed && !positions.is_empty() {
+    if !positions.is_empty() {
         area.push(&positions, &holes);
         positions.clear();
         holes.clear();
@@ -203,6 +203,7 @@ fn get_positions(
     ref0: u64,
 ) -> Result<(bool,Vec<f32>), Error> {
     let mut positions = Vec::with_capacity(nodes.len() * 2);
+    let fref = *refs.first().unwrap_or(&u64::MAX);
     let irefs = (0..refs.len()).map(|i| {
         refs[match reverse {
             true => refs.len() - i - 1,
@@ -210,8 +211,8 @@ fn get_positions(
         }]
     });
     let mut closed = false;
-    for r in irefs {
-        if r == ref0 {
+    for (i,r) in irefs.enumerate() {
+        if r == ref0 || (i > 0 && r == fref) {
             closed = true;
             continue;
         }
