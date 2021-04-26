@@ -25,3 +25,6 @@ pub use area::*;
 
 mod member;
 pub use member::*;
+
+mod feature;
+pub use feature::*;
