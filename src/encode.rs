@@ -1,4 +1,4 @@
-use crate::{Area, Line, Point, Member, MemberRole,tags};
+use crate::{Area, Line, Point, Member, MemberRole, tags};
 use desert::ToBytesLE;
 use failure::Error;
 use osm_is_area;
@@ -34,6 +34,33 @@ fn encode_way_line() {
     );
 }
 
+#[test]
+fn encode_way_area() -> Result<(),Error> {
+    use crate::{decode, Feature, osm_types::get_types};
+    let tags = vec![("source", "bing"), ("leisure", "park")];
+    let refs = vec![1, 5, 3, 1];
+    let mut deps = HashMap::new();
+    deps.insert(1, (31.184799400000003, 29.897739500000004));
+    deps.insert(5, (31.184888100000002, 29.898801400000004));
+    deps.insert(3, (31.184858400000003, 29.8983899));
+    let bytes = way(234941233, &tags, &refs, &deps).unwrap();
+    assert_eq![
+        decode(&bytes)?,
+        Feature::Area(Area {
+            id: 234941233,
+            feature_type: *get_types().get("leisure.park").unwrap(),
+            labels: vec![0],
+            positions: vec![
+                31.184799400000003, 29.897739500000004,
+                31.184888100000002, 29.898801400000004,
+                31.184858400000003, 29.8983899,
+            ],
+            cells: vec![1,0,2],
+        })
+    ];
+    Ok(())
+}
+
 pub fn way(
     id: u64,
     tags: &[(&str, &str)],
@@ -42,7 +69,12 @@ pub fn way(
 ) -> Result<Vec<u8>, Error> {
     let len = refs.len();
     if osm_is_area::way(tags, refs) {
-        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
+        // omit the duplicated ref for areas (first == last):
+        let fixed_refs = {
+            if refs.first() == refs.last() { &refs[0..refs.len()-1] }
+            else { &refs }
+        };
+        let (_,positions) = get_positions(&fixed_refs, &deps, false, u64::MAX)?;
         let mut area = Area::from_tags(id, &tags)?;
         area.push(&positions, &vec![]);
         area.to_bytes_le()
