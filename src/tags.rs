@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 #[test]
 fn two_tags_one_has_no_priority() {
-    use crate::node::PeerNode;
+    use crate::node::Point;
     use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
@@ -17,7 +17,7 @@ fn two_tags_one_has_no_priority() {
         ("highway", "traffic_signals"),
         ("power", "cable"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
@@ -27,7 +27,7 @@ fn two_tags_one_has_no_priority() {
 
 #[test]
 fn two_tags_both_valid_priorities() {
-    use crate::node::PeerNode;
+    use crate::node::Point;
     use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
@@ -37,7 +37,7 @@ fn two_tags_both_valid_priorities() {
         ("route", "canoe"),
         ("power", "cable"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
@@ -48,7 +48,7 @@ fn two_tags_both_valid_priorities() {
 
 #[test]
 fn two_tags_same_priority() {
-    use crate::node::PeerNode;
+    use crate::node::Point;
     use desert::ToBytesLE;
     let id = 1831881213;
     let lon = 12.253938100000001;
@@ -58,7 +58,7 @@ fn two_tags_same_priority() {
         ("railway", "wash"),
         ("power", "cable"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
@@ -71,7 +71,7 @@ fn two_tags_same_priority() {
         ("power", "cable"),
         ("railway", "wash"),
     ];
-    let node = PeerNode::from_tags(id, (lon, lat), &tags);
+    let node = Point::from_tags(id, (lon, lat), &tags);
 
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
@@ -149,27 +149,27 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
 
         match ALL_TYPES.get(formatted_key) {
             Some(this_type) => {
-                println!("Found type {} for {}", this_type, formatted_key);
+                //println!("Found type {} for {}", this_type, formatted_key);
                 match get_tag_priority(tag) {
                     Some(_priority) => {
-                        println!("Found priority {} for {}", _priority, formatted_key);
+                        //println!("Found priority {} for {}", _priority, formatted_key);
                         priority = _priority
                     }
                     None => {
                         priority = DEFAULT_PRIORITY.clone();
-                        println!("Using default priority {} for {}", priority, formatted_key);
+                        //println!("Using default priority {} for {}", priority, formatted_key);
                     }
                 }
 
-                println!("comparing {} top and {} priority", top_priority, priority);
+                //println!("comparing {} top and {} priority", top_priority, priority);
                 if top_priority <= priority {
                     top_priority = priority;
                     top_type = *this_type;
-                    println!("top priority {} {}", top_priority, top_type);
+                    //println!("top priority {} {}", top_priority, top_type);
                 }
             }
             None => {
-                println!("Found no type for {}", formatted_key);
+                //println!("Found no type for {}", formatted_key);
             }
         }
 
@@ -180,7 +180,7 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
                 let tag_length = get_tag_length(tag);
 
                 let maybe_offset =
-                    varint::encode_with_offset(tag_length as u64, &mut label, offset);
+                    varint::encode(tag_length as u64, &mut label[offset..]);
                 match maybe_offset {
                     Ok(is_offset) => {
                         offset += is_offset;
@@ -201,6 +201,6 @@ pub fn parse(tags: &[(&str, &str)]) -> Result<(u64, Vec<u8>), Error> {
 
     label[offset] = 0x00;
 
-    println!("top type {}", top_type);
+    //println!("top type {}", top_type);
     return Ok((top_type, label));
 }

@@ -20,16 +20,12 @@ pub fn decode(buf: &[u8]) -> Result<(usize, u64), Error> {
 }
 
 pub fn encode(value: u64, buf: &mut [u8]) -> Result<usize, Error> {
-    return encode_with_offset(value, buf, 0);
-}
-
-pub fn encode_with_offset(value: u64, buf: &mut [u8], offset: usize) -> Result<usize, Error> {
     let len = length(value);
     if buf.len() < len {
         bail!["buffer is too small to write varint"]
     }
     let mut v = value;
-    let mut off = offset;
+    let mut off = 0;
     while v > 127 {
         buf[off] = (v as u8) | 128;
         off += 1;

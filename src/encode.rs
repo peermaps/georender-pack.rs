@@ -1,11 +1,11 @@
-use crate::{PeerArea, PeerLine, PeerNode, Member, MemberRole,tags};
+use crate::{Area, Line, Point, Member, MemberRole, tags};
 use desert::ToBytesLE;
 use failure::Error;
 use osm_is_area;
 use std::collections::HashMap;
 
 pub fn node(id: u64, point: (f32, f32), tags: &[(&str, &str)]) -> Result<Vec<u8>, Error> {
-    let node = PeerNode::from_tags(id, point, &tags)?;
+    let node = Point::from_tags(id, point, &tags)?;
     return node.to_bytes_le();
 }
 
@@ -15,7 +15,7 @@ pub fn node_from_parsed(
     feature_type: u64,
     labels: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let node = PeerNode::new(id, point, feature_type, labels);
+    let node = Point::new(id, point, feature_type, labels);
     return node.to_bytes_le();
 }
 
@@ -34,6 +34,34 @@ fn encode_way_line() {
     );
 }
 
+#[test]
+fn encode_way_area() -> Result<(),Error> {
+    use crate::{decode, Feature, osm_types::get_types};
+    let tags = vec![("source", "bing"), ("leisure", "park")];
+    let refs = vec![1, 5, 3, 1];
+    let mut deps = HashMap::new();
+    deps.insert(1, (31.184799400000003, 29.897739500000004));
+    deps.insert(5, (31.184888100000002, 29.898801400000004));
+    deps.insert(3, (31.184858400000003, 29.8983899));
+    let feature_type = *get_types().get("leisure.park").unwrap();
+    let expected = Feature::Area(Area {
+        id: 234941233,
+        feature_type,
+        labels: vec![0],
+        positions: vec![
+            31.184799400000003, 29.897739500000004,
+            31.184888100000002, 29.898801400000004,
+            31.184858400000003, 29.8983899,
+        ],
+        cells: vec![1,0,2],
+    });
+    assert_eq![&expected, &decode(&way(234941233, &tags, &refs, &deps)?)?];
+    assert_eq![&expected, &decode(
+        &way_from_parsed(234941233, feature_type, true, &vec![0], &refs, &deps)?
+    )?];
+    Ok(())
+}
+
 pub fn way(
     id: u64,
     tags: &[(&str, &str)],
@@ -42,13 +70,18 @@ pub fn way(
 ) -> Result<Vec<u8>, Error> {
     let len = refs.len();
     if osm_is_area::way(tags, refs) {
-        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let mut area = PeerArea::from_tags(id, &tags)?;
+        // omit the duplicated ref for areas (first == last):
+        let fixed_refs = {
+            if refs.first() == refs.last() { &refs[0..refs.len()-1] }
+            else { &refs }
+        };
+        let (_,positions) = get_positions(&fixed_refs, &deps, false, u64::MAX)?;
+        let mut area = Area::from_tags(id, &tags)?;
         area.push(&positions, &vec![]);
         area.to_bytes_le()
     } else if len > 1 {
         let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let line = PeerLine::from_tags(id, &tags, &positions)?;
+        let line = Line::from_tags(id, &tags, &positions)?;
         line.to_bytes_le()
     } else {
         Ok(vec![])
@@ -65,13 +98,18 @@ pub fn way_from_parsed(
 ) -> Result<Vec<u8>, Error> {
     let len = refs.len();
     if is_area {
-        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let mut area = PeerArea::new(id, feature_type, labels);
+        // omit the duplicated ref for areas (first == last):
+        let fixed_refs = {
+            if refs.first() == refs.last() { &refs[0..refs.len()-1] }
+            else { &refs }
+        };
+        let (_,positions) = get_positions(&fixed_refs, &deps, false, u64::MAX)?;
+        let mut area = Area::new(id, feature_type, labels);
         area.push(&positions, &vec![]);
         return area.to_bytes_le();
     } else if len > 1 {
         let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
-        let line = PeerLine::new(id, feature_type, labels, &positions);
+        let line = Line::new(id, feature_type, labels, &positions);
         return line.to_bytes_le();
     } else {
         return Ok(vec![]);
@@ -105,7 +143,7 @@ pub fn relation_from_parsed(
     Member::drain(&mut mmembers, ways);
     mmembers = Member::sort(&mmembers, ways);
 
-    let mut area = PeerArea::new(id, feature_type, labels);
+    let mut area = Area::new(id, feature_type, labels);
     let mut positions = vec![];
     let mut holes = vec![];
     let mut closed = false;
@@ -114,13 +152,13 @@ pub fn relation_from_parsed(
     for m in mmembers.iter() {
         match m.role {
             MemberRole::Outer() => {
+                let refs = ways.get(&m.id).unwrap();
                 if closed {
                     area.push(&positions, &holes);
                     positions.clear();
                     holes.clear();
                     ref0 = u64::MAX;
                 }
-                let refs = ways.get(&m.id).unwrap();
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
                 closed = c;
                 positions.extend(pts);
@@ -150,7 +188,7 @@ pub fn relation_from_parsed(
             _ => {}
         }
     }
-    if closed && !positions.is_empty() {
+    if !positions.is_empty() {
         area.push(&positions, &holes);
         positions.clear();
         holes.clear();
@@ -165,6 +203,7 @@ fn get_positions(
     ref0: u64,
 ) -> Result<(bool,Vec<f32>), Error> {
     let mut positions = Vec::with_capacity(nodes.len() * 2);
+    let fref = *refs.first().unwrap_or(&u64::MAX);
     let irefs = (0..refs.len()).map(|i| {
         refs[match reverse {
             true => refs.len() - i - 1,
@@ -172,8 +211,8 @@ fn get_positions(
         }]
     });
     let mut closed = false;
-    for r in irefs {
-        if r == ref0 {
+    for (i,r) in irefs.enumerate() {
+        if r == ref0 || (i > 0 && r == fref) {
             closed = true;
             continue;
         }
