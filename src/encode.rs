@@ -148,10 +148,19 @@ pub fn relation_from_parsed(
     let mut holes = vec![];
     let mut closed = false;
     let mut ref0 = u64::MAX;
+    let mut prev_role = MemberRole::Unused();
+    let mut istart = 0;
 
     for m in mmembers.iter() {
         match m.role {
             MemberRole::Outer() => {
+                if prev_role != MemberRole::Outer() {
+                    if is_closed(&positions[istart..]) {
+                        positions.pop();
+                        positions.pop();
+                    }
+                    istart = positions.len();
+                }
                 let refs = ways.get(&m.id).unwrap();
                 if closed {
                     area.push(&positions, &holes);
@@ -165,18 +174,28 @@ pub fn relation_from_parsed(
                 if closed {
                     ref0 = u64::MAX;
                 } else if ref0 == u64::MAX && m.reverse {
-                    ref0 = *refs.last().unwrap();
-                } else if ref0 == u64::MAX {
                     ref0 = *refs.first().unwrap();
+                } else if ref0 == u64::MAX {
+                    ref0 = *refs.last().unwrap();
                 }
             }
             MemberRole::Inner() => {
+                if prev_role != MemberRole::Inner() {
+                    if is_closed(&positions[istart..]) {
+                        positions.pop();
+                        positions.pop();
+                    }
+                    istart = positions.len();
+                }
                 let refs = ways.get(&m.id).unwrap();
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
                 if ref0 == u64::MAX && m.reverse {
                     ref0 = *refs.last().unwrap();
                     holes.push(positions.len()/2);
                 } else if ref0 == u64::MAX {
+                    ref0 = *refs.first().unwrap();
+                    holes.push(positions.len() / 2);
+                } else if c {
                     ref0 = *refs.first().unwrap();
                     holes.push(positions.len() / 2);
                 }
@@ -187,8 +206,16 @@ pub fn relation_from_parsed(
             }
             _ => {}
         }
+        prev_role = m.role.clone();
     }
     if !positions.is_empty() {
+        if is_closed(&positions[istart..]) {
+            positions.pop();
+            positions.pop();
+            if prev_role == MemberRole::Inner() {
+                holes.push(istart/2);
+            }
+        }
         area.push(&positions, &holes);
         positions.clear();
         holes.clear();
@@ -203,7 +230,10 @@ fn get_positions(
     ref0: u64,
 ) -> Result<(bool,Vec<f32>), Error> {
     let mut positions = Vec::with_capacity(nodes.len() * 2);
-    let fref = *refs.first().unwrap_or(&u64::MAX);
+    let fref = match reverse {
+        true => *refs.last().unwrap_or(&u64::MAX),
+        false => *refs.first().unwrap_or(&u64::MAX),
+    };
     let irefs = (0..refs.len()).map(|i| {
         refs[match reverse {
             true => refs.len() - i - 1,
@@ -225,4 +255,10 @@ fn get_positions(
         }
     }
     return Ok((closed, positions));
+}
+
+fn is_closed(pts: &[f32]) -> bool {
+    if pts.len() < 4 { return false }
+    let n = pts.len()-2;
+    pts[0] == pts[n+0] && pts[1] == pts[n+1]
 }

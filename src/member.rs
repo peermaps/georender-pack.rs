@@ -1,20 +1,20 @@
 use std::collections::{HashMap,HashSet};
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum MemberRole {
     Inner(),
     Outer(),
     Unused(),
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub enum MemberType {
     Node(),
     Way(),
     Relation(),
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct Member {
     pub id: u64,
     pub role: MemberRole,
@@ -124,6 +124,16 @@ impl Member {
             if !found {
                 i = j;
                 j += 1;
+            }
+        }
+        // flip all if more reverses than not
+        let mut rcount = 0;
+        for m in sorted.iter() {
+            if m.reverse { rcount += 1 }
+        }
+        if rcount*2 > sorted.len() {
+            for m in sorted.iter_mut() {
+                m.reverse = !m.reverse;
             }
         }
         sorted
