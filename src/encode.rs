@@ -75,12 +75,12 @@ pub fn way(
             if refs.first() == refs.last() { &refs[0..refs.len()-1] }
             else { &refs }
         };
-        let (_,positions) = get_positions(&fixed_refs, &deps, false, u64::MAX)?;
+        let positions = get_way_positions(&fixed_refs, &deps)?;
         let mut area = Area::from_tags(id, &tags)?;
         area.push(&positions, &vec![]);
         area.to_bytes_le()
     } else if len > 1 {
-        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
+        let positions = get_way_positions(&refs, &deps)?;
         let line = Line::from_tags(id, &tags, &positions)?;
         line.to_bytes_le()
     } else {
@@ -103,12 +103,12 @@ pub fn way_from_parsed(
             if refs.first() == refs.last() { &refs[0..refs.len()-1] }
             else { &refs }
         };
-        let (_,positions) = get_positions(&fixed_refs, &deps, false, u64::MAX)?;
+        let positions = get_way_positions(&fixed_refs, &deps)?;
         let mut area = Area::new(id, feature_type, labels);
         area.push(&positions, &vec![]);
         return area.to_bytes_le();
     } else if len > 1 {
-        let (_,positions) = get_positions(&refs, &deps, false, u64::MAX)?;
+        let positions = get_way_positions(&refs, &deps)?;
         let line = Line::new(id, feature_type, labels, &positions);
         return line.to_bytes_le();
     } else {
@@ -149,6 +149,7 @@ pub fn relation_from_parsed(
     let mut closed = false;
     let mut ref0 = u64::MAX;
     let mut prev_role = MemberRole::Unused();
+    let mut prev_ref = None;
     let mut istart = 0;
 
     for m in mmembers.iter() {
@@ -168,7 +169,11 @@ pub fn relation_from_parsed(
                     holes.clear();
                     ref0 = u64::MAX;
                 }
-                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
+                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0, prev_ref)?;
+                prev_ref = match m.reverse {
+                    true => refs.first().map(|x| x.clone()),
+                    false => refs.last().map(|x| x.clone()),
+                };
                 closed = c;
                 positions.extend(pts);
                 if closed {
@@ -188,7 +193,11 @@ pub fn relation_from_parsed(
                     istart = positions.len();
                 }
                 let refs = ways.get(&m.id).unwrap();
-                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0)?;
+                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0, prev_ref)?;
+                prev_ref = match m.reverse {
+                    true => refs.first().map(|x| x.clone()),
+                    false => refs.last().map(|x| x.clone()),
+                };
                 if ref0 == u64::MAX && m.reverse {
                     ref0 = *refs.last().unwrap();
                     holes.push(positions.len()/2);
@@ -223,11 +232,34 @@ pub fn relation_from_parsed(
     return area.to_bytes_le();
 }
 
+fn get_way_positions(
+    refs: &[u64],
+    nodes: &HashMap<u64, (f32, f32)>,
+) -> Result<Vec<f32>, Error> {
+    let mut positions = Vec::with_capacity(nodes.len() * 2);
+    let xrefs = if refs.first() == refs.last() {
+        &refs[0..refs.len()-1]
+    } else {
+        &refs[..]
+    };
+    for r in xrefs.iter() {
+        match nodes.get(&r) {
+            Some((lon, lat)) => {
+                positions.push(*lon);
+                positions.push(*lat);
+            }
+            None => bail!("Could not find dep for {}", &r),
+        }
+    }
+    return Ok(positions);
+}
+
 fn get_positions(
     refs: &[u64],
     nodes: &HashMap<u64, (f32, f32)>,
     reverse: bool,
     ref0: u64,
+    prev: Option<u64>,
 ) -> Result<(bool,Vec<f32>), Error> {
     let mut positions = Vec::with_capacity(nodes.len() * 2);
     let fref = match reverse {
@@ -241,7 +273,10 @@ fn get_positions(
         }]
     });
     let mut closed = false;
+    let len = irefs.len();
     for (i,r) in irefs.enumerate() {
+        if i == 0 && prev == Some(r) { continue }
+        if i == len-1 && prev == Some(r) { continue }
         if r == ref0 || (i > 0 && r == fref) {
             closed = true;
             continue;

@@ -126,14 +126,33 @@ impl Member {
                 j += 1;
             }
         }
-        // flip all if more reverses than not
-        let mut rcount = 0;
-        for m in sorted.iter() {
-            if m.reverse { rcount += 1 }
-        }
-        if rcount*2 > sorted.len() {
-            for m in sorted.iter_mut() {
-                m.reverse = !m.reverse;
+
+        // for each slice of outer and inners,
+        // flip all if more reverses than not, then reverse the whole slice
+        // [1,2], [2,3], [3,4] -> [2,1], [3,2], [4,3] -> [4,3], [3,2], [2,1]
+        {
+            let mut runs = vec![];
+            let mut prev = None;
+            let mut i = 0;
+            let mlen = members.len();
+            for (j,m) in members.iter().enumerate() {
+                if prev != Some(&m.role) || j == mlen-1 {
+                    runs.push((i,j));
+                    i = j;
+                }
+                prev = Some(&m.role);
+            }
+            for (i,j) in runs.iter() {
+                let mut rcount = 0;
+                for m in sorted[*i..*j].iter() {
+                    if m.reverse { rcount += 1 }
+                }
+                if rcount*2 > *j-*i {
+                    for m in sorted[*i..*j].iter_mut() {
+                        m.reverse = !m.reverse;
+                    }
+                    sorted[*i..*j].reverse();
+                }
             }
         }
         sorted
