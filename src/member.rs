@@ -37,8 +37,31 @@ impl Member {
             }
         });
     }
-    pub fn sort(members: &[Member], ways: &HashMap<u64, Vec<u64>>) -> Vec<Member> {
-        if members.is_empty() { return vec![] }
+    pub fn sort(mmembers: &[Member], ways: &HashMap<u64, Vec<u64>>) -> Vec<Member> {
+        if mmembers.is_empty() { return vec![] }
+        // first re-order so that the first role is an outer
+        let n = mmembers.len();
+        let mut ms = Vec::with_capacity(n);
+        let members = {
+            if mmembers.first().map(|m| m.role.clone()) == Some(MemberRole::Inner()) {
+                let iend = mmembers.iter().position(|m| {
+                    m.role != MemberRole::Inner()
+                }).unwrap_or(0);
+                let oend = iend + mmembers[iend..].iter().position(|m| {
+                    m.role != MemberRole::Outer()
+                }).unwrap_or(mmembers.len()-1);
+                let inners = mmembers[0..iend].to_vec();
+                let outers = mmembers[iend..oend].to_vec();
+                let post = mmembers[oend..].to_vec();
+                ms.extend(outers);
+                ms.extend(inners);
+                ms.extend(post);
+                &ms
+            } else {
+                mmembers
+            }
+        };
+
         let mut first_ids: HashMap<u64,Vec<usize>> = HashMap::new();
         let mut last_ids: HashMap<u64,Vec<usize>> = HashMap::new();
         for (i,m) in members.iter().enumerate() {
