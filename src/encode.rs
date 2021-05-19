@@ -141,6 +141,9 @@ pub fn relation_from_parsed(
     if members.is_empty() || !is_area { return Ok(vec![]) }
     let mut mmembers: Vec<Member> = members.to_vec();
     Member::drain(&mut mmembers, ways);
+    if !mmembers.iter().any(|m| m.role == MemberRole::Outer()) {
+        return Ok(vec![]); // skip relations with no outers
+    }
     mmembers = Member::sort(&mmembers, ways);
 
     let mut area = Area::new(id, feature_type, labels);
