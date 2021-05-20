@@ -170,6 +170,7 @@ pub fn relation_from_parsed(
                     area.push(&positions, &holes);
                     positions.clear();
                     holes.clear();
+                    istart = 0;
                     ref0 = u64::MAX;
                 }
                 let (c,pts) = get_positions(refs, nodes, m.reverse, ref0, prev_ref)?;

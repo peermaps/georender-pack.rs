@@ -47,9 +47,11 @@ impl Member {
                 let iend = mmembers.iter().position(|m| {
                     m.role != MemberRole::Inner()
                 }).unwrap_or(0);
-                let oend = iend + mmembers[iend..].iter().position(|m| {
-                    m.role != MemberRole::Outer()
-                }).unwrap_or(mmembers.len()-1);
+                let oend = mmembers[iend..].iter()
+                    .position(|m| { m.role != MemberRole::Outer() })
+                    .and_then(|i| Some(i + iend))
+                    .unwrap_or(mmembers.len())
+                    .min(mmembers.len());
                 let inners = mmembers[0..iend].to_vec();
                 let outers = mmembers[iend..oend].to_vec();
                 let post = mmembers[oend..].to_vec();
