@@ -29,7 +29,7 @@ fn encode_way_line() {
     deps.insert(3, (31.184858400000003, 29.8983899));
     let bytes = way(234941233, &tags, &refs, &deps).unwrap();
     assert_eq!(
-        "029c03b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef4100",
+        "029b03b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef4100",
         hex::encode(bytes)
     );
 }

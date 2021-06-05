@@ -16,7 +16,7 @@ fn peer_line() -> Result<(),Error> {
 
     let bytes = line.to_bytes_le().unwrap();
     assert_eq!(
-        "029c03b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef4100",
+        "029b03b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef4100",
         hex::encode(&bytes)
     );
     assert_eq!(

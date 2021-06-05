@@ -21,7 +21,7 @@ fn two_tags_one_has_no_priority() {
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
-        "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
+        "01d205fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
     );
 }
 
@@ -42,7 +42,7 @@ fn two_tags_both_valid_priorities() {
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
-        "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
+        "01d205fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
     );
 }
 
@@ -63,7 +63,7 @@ fn two_tags_same_priority() {
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
-        "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
+        "01d205fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
     );
 
     let tags = vec![
@@ -76,7 +76,7 @@ fn two_tags_same_priority() {
     let bytes = node.unwrap().to_bytes_le().unwrap();
     assert_eq!(
         hex::encode(bytes),
-        "01d305fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
+        "01d205fd93c1e906211044413a5c58420f3d4920616d2053746f706c6967687400"
     );
 }
 

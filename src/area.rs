@@ -22,7 +22,7 @@ fn peer_area() -> Result<(),Error> {
 
     let bytes = area.to_bytes_le().unwrap();
     assert_eq!(
-        "03c901b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef410101000200",
+        "03c801b1d6837003787af941922eef41a77af941bf30ef41977af941e72fef410101000200",
         hex::encode(&bytes)
     );
     assert_eq!(
