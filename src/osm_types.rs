@@ -129,7 +129,6 @@ pub fn get_types<'a>() -> HashMap<&'a str, u64> {
         ("amenity.social_centre", 124),
         ("amenity.social_facility", 125),
         ("amenity.stripclub", 126),
-        ("amenity.stripclub| amenity=stripclub", 127),
         ("amenity.studio", 128),
         ("amenity.swingerclub", 129),
         ("amenity.table", 130),
