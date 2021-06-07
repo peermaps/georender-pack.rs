@@ -214,6 +214,7 @@ pub fn relation_from_parsed(
                 }
                 if c {
                     ref0 = u64::MAX;
+                    closed = true;
                 }
                 positions.extend(pts);
             }
