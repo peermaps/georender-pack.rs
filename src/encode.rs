@@ -175,8 +175,6 @@ pub fn relation_from_parsed(
     let mut positions = vec![];
     let mut holes = vec![];
 
-    let plen = points.len();
-    //for (i,((role,id),prev)) in izp.enumerate() {
     for (i,(c_role,c_id)) in points.iter().enumerate() {
         let p_role = if i == 0 { None } else { points.get(i-1).map(|(r,_)| r) };
         let (n_role,n_id) = points.get(i+1).map(|(r,id)| (Some(r),Some(id))).unwrap_or((None,None));
@@ -266,48 +264,4 @@ fn get_way_positions(
         }
     }
     return Ok(positions);
-}
-
-fn get_positions(
-    refs: &[u64],
-    nodes: &HashMap<u64, (f32, f32)>,
-    reverse: bool,
-    ref0: u64,
-    prev: Option<u64>,
-) -> Result<(bool,Vec<f32>), Error> {
-    let mut positions = Vec::with_capacity(nodes.len() * 2);
-    let fref = match reverse {
-        true => *refs.last().unwrap_or(&u64::MAX),
-        false => *refs.first().unwrap_or(&u64::MAX),
-    };
-    let irefs = (0..refs.len()).map(|i| {
-        refs[match reverse {
-            true => refs.len() - i - 1,
-            false => i,
-        }]
-    });
-    let mut closed = false;
-    let len = irefs.len();
-    for (i,r) in irefs.enumerate() {
-        if i == 0 && prev == Some(r) { continue }
-        if i == len-1 && prev == Some(r) { continue }
-        if r == ref0 || (i > 0 && r == fref) {
-            closed = true;
-            continue;
-        }
-        match nodes.get(&r) {
-            Some((lon, lat)) => {
-                positions.push(*lon);
-                positions.push(*lat);
-            }
-            None => bail!("Could not find dep for {}", &r),
-        }
-    }
-    return Ok((closed, positions));
-}
-
-fn is_closed(pts: &[f32]) -> bool {
-    if pts.len() < 4 { return false }
-    let n = pts.len()-2;
-    pts[0] == pts[n+0] && pts[1] == pts[n+1]
 }
