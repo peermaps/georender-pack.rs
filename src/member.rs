@@ -47,9 +47,23 @@ impl Member {
                 let iend = mmembers.iter().position(|m| {
                     m.role != MemberRole::Inner()
                 }).unwrap_or(0);
-                let oend = mmembers[iend..].iter()
-                    .position(|m| { m.role != MemberRole::Outer() })
-                    .and_then(|i| Some(i + iend))
+                let (ref0,ref1) = mmembers.get(iend)
+                    .and_then(|m| ways.get(&m.id))
+                    .map(|refs| (refs.first(),refs.last()))
+                    .unwrap_or((None,None))
+                ;
+                let oend = mmembers[iend..].iter().enumerate()
+                    .position(|(i,m)| {
+                        m.role != MemberRole::Outer()
+                        || (i > 0 && ways.get(&m.id) // closes an outer loop
+                            .map(|refs| {
+                                refs.first() == ref0 || refs.first() == ref1
+                                || refs.last() == ref0 || refs.last() == ref1
+                            })
+                            .unwrap_or(false)
+                        )
+                    })
+                    .map(|i| i + iend)
                     .unwrap_or(mmembers.len())
                     .min(mmembers.len());
                 let inners = mmembers[0..iend].to_vec();
@@ -155,17 +169,37 @@ impl Member {
         // for each slice of outer and inners,
         // flip all if more reverses than not, then reverse the whole slice
         // [1,2], [2,3], [3,4] -> [2,1], [3,2], [4,3] -> [4,3], [3,2], [2,1]
-        {
+        if false {
             let mut runs = vec![];
             let mut prev = None;
+            let mut ref0 = None;
+            let mut ref1 = None;
             let mut i = 0;
             let mlen = members.len();
             for (j,m) in members.iter().enumerate() {
-                if prev != Some(&m.role) || j == mlen-1 {
+                let prev_role = prev.map(|p: &Member| &p.role);
+                let (p_first_ref, p_last_ref) = prev
+                    .and_then(|p| ways.get(&p.id))
+                    .map(|refs| (refs.first(), refs.last()))
+                    .unwrap_or((None,None));
+                let (m_first_ref, m_last_ref) = ways.get(&m.id)
+                    .map(|refs| (refs.first(), refs.last()))
+                    .unwrap_or((None,None));
+                if ref0.is_none() { ref0 = m_first_ref }
+                if ref1.is_none() { ref1 = m_last_ref }
+                if prev_role != Some(&m.role) || j == mlen-1 {
                     runs.push((i,j));
                     i = j;
+                } else if prev_role == Some(&MemberRole::Outer())
+                && ((p_first_ref.is_some() && p_first_ref == ref0 || p_first_ref == ref1)
+                || (p_last_ref.is_some() && p_last_ref == ref0 || p_last_ref == ref1)) {
+                    // closed outer
+                    runs.push((i,j-1));
+                    i = j-1;
+                    ref0 = None;
+                    ref1 = None;
                 }
-                prev = Some(&m.role);
+                prev = Some(&m);
             }
             for (i,j) in runs.iter() {
                 let mut rcount = 0;

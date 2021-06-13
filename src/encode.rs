@@ -146,93 +146,102 @@ pub fn relation_from_parsed(
     }
     mmembers = Member::sort(&mmembers, ways);
 
+    let points = {
+        let mut ps = vec![];
+        let mut prev = None;
+        for m in mmembers.iter() {
+            if let Some(refs) = ways.get(&m.id) {
+                if m.reverse {
+                    let skip = if prev.is_some() && prev == refs.last() { 1 } else { 0 };
+                    for id in refs.iter().rev().skip(skip) {
+                        ps.push((m.role.clone(),*id));
+                    }
+                    prev = refs.first();
+                } else {
+                    let skip = if prev.is_some() && prev == refs.first() { 1 } else { 0 };
+                    for id in refs.iter().skip(skip) {
+                        ps.push((m.role.clone(),*id));
+                    }
+                    prev = refs.last();
+                }
+            }
+        }
+        ps
+    };
+
     let mut area = Area::new(id, feature_type, labels);
+    let mut ref0 = points.first().map(|(_,id)| id);
+    let mut refi = 0;
     let mut positions = vec![];
     let mut holes = vec![];
-    let mut closed = false;
-    let mut ref0 = u64::MAX;
-    let mut prev_role = MemberRole::Unused();
-    let mut prev_ref = None;
-    let mut istart = 0;
 
-    for m in mmembers.iter() {
-        match m.role {
-            MemberRole::Outer() => {
-                if prev_role != MemberRole::Outer() {
-                    if is_closed(&positions[istart..]) {
-                        positions.pop();
-                        positions.pop();
+    let plen = points.len();
+    //for (i,((role,id),prev)) in izp.enumerate() {
+    for (i,(c_role,c_id)) in points.iter().enumerate() {
+        let p_role = if i == 0 { None } else { points.get(i-1).map(|(r,_)| r) };
+        let (n_role,n_id) = points.get(i+1).map(|(r,id)| (Some(r),Some(id))).unwrap_or((None,None));
+        match (p_role,c_role) {
+            (Some(MemberRole::Outer()),MemberRole::Inner()) => {
+                holes.push(positions.len()/2);
+                ref0 = Some(c_id);
+                refi = i;
+                if let Some(pt) = nodes.get(c_id) {
+                    positions.push(pt.0);
+                    positions.push(pt.1);
+                } else {
+                    return Ok(vec![]);
+                }
+            },
+            (Some(MemberRole::Inner()),MemberRole::Outer()) => {
+                area.push(&positions, &holes);
+                positions.clear();
+                holes.clear();
+                ref0 = Some(c_id);
+                refi = i;
+                if let Some(pt) = nodes.get(c_id) {
+                    positions.push(pt.0);
+                    positions.push(pt.1);
+                } else {
+                    return Ok(vec![]);
+                }
+            },
+            (_,MemberRole::Inner()) => {
+                if ref0 == Some(c_id) && refi != i && !positions.is_empty() {
+                    // closed loop
+                    if n_role == Some(&MemberRole::Inner()) {
+                        holes.push(positions.len()/2);
                     }
-                    istart = positions.len();
+                    ref0 = n_id;
+                    refi = i+1;
+                } else if let Some(pt) = nodes.get(c_id) {
+                    positions.push(pt.0);
+                    positions.push(pt.1);
+                } else {
+                    return Ok(vec![]);
                 }
-                let refs = ways.get(&m.id).unwrap();
-                if closed {
-                    area.push(&positions, &holes);
-                    positions.clear();
-                    holes.clear();
-                    istart = 0;
-                    ref0 = u64::MAX;
-                }
-                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0, prev_ref)?;
-                prev_ref = match m.reverse {
-                    true => refs.first().map(|x| x.clone()),
-                    false => refs.last().map(|x| x.clone()),
-                };
-                closed = c;
-                positions.extend(pts);
-                if closed {
-                    ref0 = u64::MAX;
-                } else if ref0 == u64::MAX && m.reverse {
-                    ref0 = *refs.first().unwrap();
-                } else if ref0 == u64::MAX {
-                    ref0 = *refs.last().unwrap();
-                }
-            }
-            MemberRole::Inner() => {
-                if prev_role != MemberRole::Inner() {
-                    if is_closed(&positions[istart..]) {
-                        positions.pop();
-                        positions.pop();
+            },
+            (_,MemberRole::Outer()) => {
+                if ref0 == Some(c_id) && refi != i {
+                    // closed loop
+                    if n_role == Some(&MemberRole::Outer()) {
+                        area.push(&positions, &holes);
+                        positions.clear();
+                        holes.clear();
                     }
-                    istart = positions.len();
+                    ref0 = n_id;
+                    refi = i+1;
+                } else if let Some(pt) = nodes.get(c_id) {
+                    positions.push(pt.0);
+                    positions.push(pt.1);
+                } else {
+                    return Ok(vec![]);
                 }
-                let refs = ways.get(&m.id).unwrap();
-                let (c,pts) = get_positions(refs, nodes, m.reverse, ref0, prev_ref)?;
-                prev_ref = match m.reverse {
-                    true => refs.first().map(|x| x.clone()),
-                    false => refs.last().map(|x| x.clone()),
-                };
-                if ref0 == u64::MAX && m.reverse {
-                    ref0 = *refs.last().unwrap();
-                    holes.push(positions.len()/2);
-                } else if ref0 == u64::MAX {
-                    ref0 = *refs.first().unwrap();
-                    holes.push(positions.len() / 2);
-                } else if c {
-                    ref0 = *refs.first().unwrap();
-                    holes.push(positions.len() / 2);
-                }
-                if c {
-                    ref0 = u64::MAX;
-                    closed = true;
-                }
-                positions.extend(pts);
-            }
-            _ => {}
+            },
+            (_,MemberRole::Unused()) => {},
         }
-        prev_role = m.role.clone();
     }
     if !positions.is_empty() {
-        if is_closed(&positions[istart..]) {
-            positions.pop();
-            positions.pop();
-            if prev_role == MemberRole::Inner() {
-                holes.push(istart/2);
-            }
-        }
         area.push(&positions, &holes);
-        positions.clear();
-        holes.clear();
     }
     return area.to_bytes_le();
 }
