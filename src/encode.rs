@@ -149,21 +149,25 @@ pub fn relation_from_parsed(
     let points = {
         let mut ps = vec![];
         let mut prev = None;
+        let mut prev_closed = false;
         for m in mmembers.iter() {
             if let Some(refs) = ways.get(&m.id) {
                 if m.reverse {
-                    let skip = if prev.is_some() && prev == refs.last() { 1 } else { 0 };
+                    let skip = if prev.is_some() && prev == refs.last()
+                        && !prev_closed { 1 } else { 0 };
                     for id in refs.iter().rev().skip(skip) {
                         ps.push((m.role.clone(),*id));
+                        prev = Some(id);
                     }
-                    prev = refs.first();
                 } else {
-                    let skip = if prev.is_some() && prev == refs.first() { 1 } else { 0 };
+                    let skip = if prev.is_some() && prev == refs.first()
+                        && !prev_closed { 1 } else { 0 };
                     for id in refs.iter().skip(skip) {
                         ps.push((m.role.clone(),*id));
+                        prev = Some(id);
                     }
-                    prev = refs.last();
                 }
+                prev_closed = refs.first() == refs.last();
             }
         }
         ps
