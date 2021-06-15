@@ -1,7 +1,7 @@
 [package]
 name = "georender-pack"
 description = "Pack osm data into a buffer based on the peermaps buffer schema"
-version = "2.1.0"
+version = "2.1.1"
 authors = ["Karissa McKelvey <karissa.mckelvey@gmail.com>"]
 keywords = ["osm", "peermaps", "p2p", "decentralized", "maps"]
 edition = "2018"
