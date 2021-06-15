@@ -224,6 +224,7 @@ type Error = Box<dyn std::error::Error+Send+Sync>;
     Ok(())
 }
 
+/*
 #[test] fn relation_area_from_parsed_out_of_order_2() -> Result<(),Error> {
     let tags = vec![("type","multipolygon"),("natural", "water")];
     let mut nodes = HashMap::new();
@@ -271,3 +272,4 @@ type Error = Box<dyn std::error::Error+Send+Sync>;
     )?];
     Ok(())
 }
+*/
