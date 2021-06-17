@@ -165,55 +165,6 @@ impl Member {
                 j += 1;
             }
         }
-
-        // for each slice of outer and inners,
-        // flip all if more reverses than not, then reverse the whole slice
-        // [1,2], [2,3], [3,4] -> [2,1], [3,2], [4,3] -> [4,3], [3,2], [2,1]
-        if false {
-            let mut runs = vec![];
-            let mut prev = None;
-            let mut ref0 = None;
-            let mut ref1 = None;
-            let mut i = 0;
-            let mlen = members.len();
-            for (j,m) in members.iter().enumerate() {
-                let prev_role = prev.map(|p: &Member| &p.role);
-                let (p_first_ref, p_last_ref) = prev
-                    .and_then(|p| ways.get(&p.id))
-                    .map(|refs| (refs.first(), refs.last()))
-                    .unwrap_or((None,None));
-                let (m_first_ref, m_last_ref) = ways.get(&m.id)
-                    .map(|refs| (refs.first(), refs.last()))
-                    .unwrap_or((None,None));
-                if ref0.is_none() { ref0 = m_first_ref }
-                if ref1.is_none() { ref1 = m_last_ref }
-                if prev_role != Some(&m.role) || j == mlen-1 {
-                    runs.push((i,j));
-                    i = j;
-                } else if prev_role == Some(&MemberRole::Outer())
-                && ((p_first_ref.is_some() && p_first_ref == ref0 || p_first_ref == ref1)
-                || (p_last_ref.is_some() && p_last_ref == ref0 || p_last_ref == ref1)) {
-                    // closed outer
-                    runs.push((i,j-1));
-                    i = j-1;
-                    ref0 = None;
-                    ref1 = None;
-                }
-                prev = Some(&m);
-            }
-            for (i,j) in runs.iter() {
-                let mut rcount = 0;
-                for m in sorted[*i..*j].iter() {
-                    if m.reverse { rcount += 1 }
-                }
-                if rcount*2 > *j-*i {
-                    for m in sorted[*i..*j].iter_mut() {
-                        m.reverse = !m.reverse;
-                    }
-                    sorted[*i..*j].reverse();
-                }
-            }
-        }
         sorted
     }
 }

@@ -224,7 +224,6 @@ type Error = Box<dyn std::error::Error+Send+Sync>;
     Ok(())
 }
 
-/*
 #[test] fn relation_area_from_parsed_out_of_order_2() -> Result<(),Error> {
     let tags = vec![("type","multipolygon"),("natural", "water")];
     let mut nodes = HashMap::new();
@@ -246,7 +245,7 @@ type Error = Box<dyn std::error::Error+Send+Sync>;
 
     let positions = vec![
         -0.1, 0.3, 1.3, 0.3, 1.3, 1.2, -0.1, 1.2,
-        0.8, 0.7, 1.0, 0.6, 0.5, 0.5,
+        0.5, 0.5, 1.0, 0.6, 0.8, 0.7,
     ];
     let cells = earcutr::earcut(&positions, &vec![4], 2);
     let feature_type = *get_types().get("natural.water").unwrap();
@@ -272,4 +271,3 @@ type Error = Box<dyn std::error::Error+Send+Sync>;
     )?];
     Ok(())
 }
-*/
